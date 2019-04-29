@@ -18,10 +18,11 @@ func main () {
 		log.Fatal(err)
 	}
 	for i := 0; i < numberOfCases; i ++ {
+		log.Println(i)
 		c := parseCase(reader, i)
 		nRoutes := c.Solve()
 		printResult(i, nRoutes)
-		log.Println(c)
+		// log.Println(c)
 	}
 }
 
