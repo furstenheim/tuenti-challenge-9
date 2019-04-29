@@ -112,38 +112,42 @@ func (c * Case) Solve () []Punch {
 			if nextFold == Top {
 				newPunches = append(
 					newPunches,
-					Punch{x: p[0], y: p[1] + y},
-					Punch{x: p[0], y: y - p[1]},
+					Punch{p[0], p[1] + y},
+					Punch{p[0], y - p[1]- 1},
 				)
 				y = 2 * y
 			} else if nextFold == Bottom {
 				newPunches = append(
 					newPunches,
-					Punch{x: p[0], y: p[1]},
-					Punch{x: p[0], y: 2 * y - p[1]},
+					Punch{p[0], p[1]},
+					Punch{p[0], 2 * y - p[1]},
 				)
 				y = 2 * y
 			} else if nextFold == Right {
 				newPunches = append(
 					newPunches,
-					Punch{x: p[0], y: p[1]},
-					Punch{x: 2 * x - p[0], y: p[1]},
+					Punch{p[0], p[1]},
+					Punch{2 * x - p[0], p[1]},
 				)
 				x = 2 * x
 			} else if nextFold == Left {
 				newPunches = append(
 					newPunches,
-					Punch{x: p[0] + x, y: p[1]},
-					Punch{x: x - p[0], y: p[1]},
+					Punch{p[0] + x, p[1]},
+					Punch{x - p[0], p[1]},
 				)
 				x = 2 * x
+			} else {
+				log.Fatal("Unknown fold", nextFold)
 			}
 		}
 		punches = newPunches
 	}
+	log.Println(punches)
 	sort.Slice(punches, func (i, j int) bool {
-		return punches[i][0] < punches[i][0] ||
-			(punches[i][0] == punches[i][0] && punches[i][1] < punches[i][1])
+		log.Println(i, j)
+		return punches[i][0] < punches[j][0] ||
+			(punches[i][0] == punches[j][0] && punches[i][1] < punches[j][1])
 	})
 	return punches
 }
