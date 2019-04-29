@@ -6,6 +6,8 @@ import (
 	"strings"
 	"strconv"
 	"log"
+	"sort"
+	"fmt"
 )
 
 const (
@@ -98,11 +100,62 @@ func parsePunches (nPunch int, reader *bufio.Reader) []Punch {
 }
 
 func (c * Case) Solve () []Punch {
-	return nil
+	punches := c.punches
+	folds := c.folds
+	x := c.x
+	y := c.y
+	for len(folds) > 0 {
+		var nextFold Fold
+		folds, nextFold = folds[:len(folds) - 1], folds[len(folds) - 1]
+		newPunches := make([]Punch, 0, len(punches) * 2)
+		for _, p := range(punches) {
+			if nextFold == Top {
+				newPunches = append(
+					newPunches,
+					Punch{x: p[0], y: p[1] + y},
+					Punch{x: p[0], y: y - p[1]},
+				)
+				y = 2 * y
+			} else if nextFold == Bottom {
+				newPunches = append(
+					newPunches,
+					Punch{x: p[0], y: p[1]},
+					Punch{x: p[0], y: 2 * y - p[1]},
+				)
+				y = 2 * y
+			} else if nextFold == Right {
+				newPunches = append(
+					newPunches,
+					Punch{x: p[0], y: p[1]},
+					Punch{x: 2 * x - p[0], y: p[1]},
+				)
+				x = 2 * x
+			} else if nextFold == Left {
+				newPunches = append(
+					newPunches,
+					Punch{x: p[0] + x, y: p[1]},
+					Punch{x: x - p[0], y: p[1]},
+				)
+				x = 2 * x
+			}
+		}
+		punches = newPunches
+	}
+	sort.Slice(punches, func (i, j int) bool {
+		return punches[i][0] < punches[i][0] ||
+			(punches[i][0] == punches[i][0] && punches[i][1] < punches[i][1])
+	})
+	return punches
 }
 
 func printResult (i int, punches []Punch) {
 
+	text1 := "Case #" + strconv.Itoa(i + 1) + ":"
+	fmt.Println(text1)
+	for _, p := range(punches) {
+		text := strconv.Itoa(p[0]) + " " + strconv.Itoa(p[1])
+		fmt.Println(text)
+	}
 }
 
 
