@@ -119,19 +119,19 @@ func (c * Case) Solve () []Punch {
 				newPunches = append(
 					newPunches,
 					Punch{p[0], p[1]},
-					Punch{p[0], 2 * y - p[1]},
+					Punch{p[0], 2 * y - p[1] - 1},
 				)
 			} else if nextFold == Right {
 				newPunches = append(
 					newPunches,
 					Punch{p[0], p[1]},
-					Punch{2 * x - p[0], p[1]},
+					Punch{2 * x - p[0] -1, p[1]},
 				)
 			} else if nextFold == Left {
 				newPunches = append(
 					newPunches,
 					Punch{p[0] + x, p[1]},
-					Punch{x - p[0], p[1]},
+					Punch{x - p[0] - 1, p[1]},
 				)
 			} else {
 				log.Fatal("Unknown fold", nextFold)
