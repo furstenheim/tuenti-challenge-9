@@ -115,37 +115,37 @@ func (c * Case) Solve () []Punch {
 					Punch{p[0], p[1] + y},
 					Punch{p[0], y - p[1]- 1},
 				)
-				y = 2 * y
 			} else if nextFold == Bottom {
 				newPunches = append(
 					newPunches,
 					Punch{p[0], p[1]},
 					Punch{p[0], 2 * y - p[1]},
 				)
-				y = 2 * y
 			} else if nextFold == Right {
 				newPunches = append(
 					newPunches,
 					Punch{p[0], p[1]},
 					Punch{2 * x - p[0], p[1]},
 				)
-				x = 2 * x
 			} else if nextFold == Left {
 				newPunches = append(
 					newPunches,
 					Punch{p[0] + x, p[1]},
 					Punch{x - p[0], p[1]},
 				)
-				x = 2 * x
 			} else {
 				log.Fatal("Unknown fold", nextFold)
 			}
+		}
+		if nextFold == Top || nextFold == Bottom {
+			y = 2 * y
+		} else if nextFold == Right || nextFold == Left {
+			x = 2 * x
 		}
 		punches = newPunches
 	}
 	log.Println(punches)
 	sort.Slice(punches, func (i, j int) bool {
-		log.Println(i, j)
 		return punches[i][0] < punches[j][0] ||
 			(punches[i][0] == punches[j][0] && punches[i][1] < punches[j][1])
 	})
