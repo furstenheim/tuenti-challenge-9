@@ -24,13 +24,14 @@ func main () {
 	}
 }
 
-type Letter string
-
+type Letter rune
+type Hint []Letter
 type Case struct {
-	clues     []Letter
-	indegree  map[int]map[Letter]bool
-	outdegree map[Letter]int
-	outmatrix map[Letter][]Letter
+	hints            []Hint
+	dictionary       map[Letter]bool
+	indegree         map[int]map[Letter]bool
+	indegreeByLetter map[Letter]int
+	outmatrix        map[Letter]map[Letter]bool
 }
 type Solution struct {
 
@@ -39,23 +40,87 @@ type Solution struct {
 func parseCase (reader * bufio.Reader) Case {
 	line, e := reader.ReadString('\n')
 	handleError(e)
-	nClues, e := strconv.Atoi(strings.Fields(line)[0])
+	nHints, e := strconv.Atoi(strings.Fields(line)[0])
 	handleError(e)
-	clues := make([]Letter, nClues)
-	for i, _ := range(clues) {
-		clueLine, e := reader.ReadString('\n')
+	hints := make([]Hint, nHints)
+	for i, _ := range(hints) {
+		hintLine, e := reader.ReadString('\n')
 		handleError(e)
-		clue := strings.Fields(clueLine)[0]
-		if len(clue) + 1 != len(clueLine) {
-			log.Fatal("Not matching length", clue, clueLine)
+		hint := strings.Fields(hintLine)[0]
+		if len(hint) + 1 != len(hintLine) {
+			log.Fatal("Not matching length", hint, hintLine)
 		}
-		clues[i] = clue
+		if len(hint) == 0 {
+			log.Fatal("Empty clue")
+		}
+		hints[i] = Hint(hint)
 	}
-	return Case{clues: clues}
+	return Case{hints: hints}
 }
 
 func (c * Case) Solve () Solution {
+	c.computeDictionary()
+	c.computeMatrices()
 	return Solution{}
+}
+
+func (c * Case) computeMatrices () {
+	for i, h1 := range (c.hints) {
+		if i == len(c.hints) - 1 {
+			break
+		}
+		h2 := c.hints[i + 1]
+		l1, l2, found := c.compareClues(h1, h2)
+		if found {
+			c.outmatrix[l1][l2] = true
+			previousIndegree := c.indegreeByLetter[l2]
+			delete(c.indegree[previousIndegree], l2)
+			indegree := previousIndegree + 1
+			_, ok := c.indegree[indegree]
+			if ok {
+				c.indegree[indegree][l2] = true
+			} else {
+				c.indegree[indegree] = map[Letter]bool{l2: true}
+			}
+			c.indegreeByLetter[l2] = indegree
+		}
+	}
+}
+
+func (c *Case) computeDictionary () {
+	dictionary := map[Letter]bool{}
+	indegree := make(map[int]map[Letter]bool, 1)
+	indegree[0] = map[Letter]bool{}
+	indegreeByLetter := make(map[Letter]int, 0)
+	outmatrix := make(map[Letter]map[Letter]bool, 0)
+	for _, h := range(c.hints) {
+		for _, l := range(h) {
+			dictionary[l] = true
+			indegree[0][l] = true
+			indegreeByLetter[l] = 0
+			outmatrix[l] = make(map[Letter]bool, 0)
+		}
+	}
+	c.dictionary = dictionary
+	c.indegree = indegree
+	c.indegreeByLetter = indegreeByLetter
+	c.outmatrix = outmatrix
+}
+
+func (c * Case) compareClues (h1, h2 Hint) (out, in Letter, found bool) {
+	for i, l1 := range(h1) {
+		if i >= len(h2) {
+			// Not really a clue. This is for example gg -> ggg
+			log.Print("Found useless clues", h1, h2)
+			return '0', '0', false
+		}
+		l2 := h2[i]
+		if l2 != l1 {
+			return l1, l2, true
+		}
+	}
+	log.Println("Found useless clue, 2", h1, h2)
+	return '0', '0', false
 }
 
 func (s * Solution) printResult (i int) {
