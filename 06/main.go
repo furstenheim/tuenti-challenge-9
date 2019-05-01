@@ -6,6 +6,7 @@ import (
 	"strings"
 	"strconv"
 	"log"
+	"fmt"
 )
 
 func main () {
@@ -34,7 +35,8 @@ type Case struct {
 	outmatrix        map[Letter]map[Letter]bool
 }
 type Solution struct {
-
+	correct bool
+	order []Letter
 }
 
 func parseCase (reader * bufio.Reader) Case {
@@ -61,7 +63,41 @@ func parseCase (reader * bufio.Reader) Case {
 func (c * Case) Solve () Solution {
 	c.computeDictionary()
 	c.computeMatrices()
-	return Solution{}
+	return c.computeSolution()
+}
+
+func (c *Case) computeSolution () Solution {
+	order := []Letter{}
+	fail := false
+	for len(c.dictionary) > 0 {
+		if len(c.indegree[0]) != 1 {
+			fail = true
+			log.Println("indegree for 0 at fail", c.indegree[0])
+			break
+		}
+		var nextLetter Letter
+		for l, _ := range(c.indegree[0]) {
+			nextLetter = l // only one interation here
+		}
+		order = append(order, nextLetter)
+		delete(c.indegree[0], nextLetter)
+		delete(c.dictionary, nextLetter)
+		for l, _ := range(c.outmatrix[nextLetter]) {
+			currentIndegree := c.indegreeByLetter[l]
+			delete(c.indegree[currentIndegree], l)
+			indegree := currentIndegree - 1
+			_, ok := c.indegree[indegree]
+			if ok {
+				c.indegree[indegree][l] = true
+			} else {
+				c.indegree[indegree] = map[Letter]bool{l: true}
+			}
+		}
+	}
+	if fail {
+		return Solution{correct: false}
+	}
+	return Solution{correct: true, order: order}
 }
 
 func (c * Case) computeMatrices () {
@@ -111,7 +147,7 @@ func (c * Case) compareClues (h1, h2 Hint) (out, in Letter, found bool) {
 	for i, l1 := range(h1) {
 		if i >= len(h2) {
 			// Not really a clue. This is for example gg -> ggg
-			log.Print("Found useless clues", h1, h2)
+			log.Println("Found useless clues", h1, h2)
 			return '0', '0', false
 		}
 		l2 := h2[i]
@@ -124,7 +160,17 @@ func (c * Case) compareClues (h1, h2 Hint) (out, in Letter, found bool) {
 }
 
 func (s * Solution) printResult (i int) {
-
+	var text1 string
+	if !s.correct {
+		text1 = fmt.Sprintf("Case #%d: AMBIGUOUS", i + 1)
+	} else {
+		orderText := []string{}
+		for _, l := range(s.order) {
+			orderText = append(orderText, string(l))
+		}
+		text1 = fmt.Sprintf("Case #%d: %s", i + 1, strings.Join(orderText, " "))
+	}
+	fmt.Println(text1)
 }
 
 func handleError (e error) {
