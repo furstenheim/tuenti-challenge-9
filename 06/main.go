@@ -72,7 +72,7 @@ func (c *Case) computeSolution () Solution {
 	for len(c.dictionary) > 0 {
 		if len(c.indegree[0]) != 1 {
 			fail = true
-			log.Println("indegree for 0 at fail", c.indegree[0])
+			log.Println("indegree for 0 at fail", c.indegree[0], c.dictionary, c.indegree)
 			break
 		}
 		var nextLetter Letter
@@ -108,6 +108,10 @@ func (c * Case) computeMatrices () {
 		h2 := c.hints[i + 1]
 		l1, l2, found := c.compareClues(h1, h2)
 		if found {
+			alreadyFound := c.outmatrix[l1][l2]
+			if alreadyFound {
+				continue
+			}
 			c.outmatrix[l1][l2] = true
 			previousIndegree := c.indegreeByLetter[l2]
 			delete(c.indegree[previousIndegree], l2)
