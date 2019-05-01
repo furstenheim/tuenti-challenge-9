@@ -67,7 +67,6 @@ func parseCase (reader * bufio.Reader) Case {
 func (c * Case) Solve () Solution {
 	c.computeDictionary()
 	c.computeMatrices()
-	log.Println("c", c.indegree, c.indegreeByLetter)
 	return c.computeSolution()
 }
 
@@ -77,7 +76,7 @@ func (c *Case) computeSolution () Solution {
 	for len(c.dictionary) > 0 {
 		if len(c.indegree[0]) != 1 {
 			fail = true
-			log.Println("indegree for 0 at fail", c.indegree[0], c.dictionary, c.indegree)
+			log.Println("indegree for 0 at fail", order, c.indegree[0], c.dictionary, c.indegree)
 			break
 		}
 		var nextLetter Letter
@@ -97,6 +96,7 @@ func (c *Case) computeSolution () Solution {
 			} else {
 				c.indegree[indegree] = map[Letter]bool{l: true}
 			}
+			c.indegreeByLetter[l] = indegree
 		}
 	}
 	if fail {

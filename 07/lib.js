@@ -1,9 +1,10 @@
 module.exports = {
   splitMessage,
-  parseInput
+  parseInput,
+  valueInRanges
 }
 const _ = require('lodash')
-const ranges = [ [ [ 0, 0 ] ],
+const allRanges = [ [ [ 0, 0 ] ],
   [ [ 96, 122 ] ],
   [ [ 192, 244 ] ],
   [ [ 32, 110 ] ],
@@ -31,6 +32,25 @@ function solveCase (c) {
 function setUpComputations (c) {
   const original = c.original
   const copy = c.copy
+  const splitOriginal = splitMessage(c.original)
+  const splitCopy = splitMessage(c.copy)
+}
+
+function findMinimumInterstitialLength (splitOriginal, splitCopy) {
+  for (let diff = 0; diff < allRanges.length; diff++) {
+    const ranges = allRanges[diff]
+    for (let i = 0; i < 16; i++) {
+
+    }
+  }
+  throw new Error('Diff not possible')
+
+
+}
+function valueInRanges (v, ranges) {
+  return !!_.find(ranges, function (range) {
+    return range[0] <= v && range[1] >= v
+  })
 
 }
 function splitMessage (m) {
@@ -50,7 +70,8 @@ function splitMessage (m) {
     m1Hash,
     m1,
     m2Hash,
-    m2
+    m2,
+    hash: _.zipWith(m1Hash, m2Hash, (h1, h2) => (h1 + h2) % 256)
   }
 }
 function parseCase (input) {
