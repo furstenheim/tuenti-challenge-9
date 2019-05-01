@@ -79,6 +79,20 @@ describe('findMinimumInterstitialLength', function () {
   })
 })
 
+describe.only('solveCase', function () {
+  const tests = [{
+    original: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Not Penny's boat`),
+    copy: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Penny's boat :)`),
+    expected: '03W000000S0e0000Xzzwue08BzQz0Z0DzzzzzzRzzzzzez_zz'
+  }]
+  _.forEach(tests, function (t, i) {
+    it('#' + i, function () {
+      const l = lib.solveCase(t)
+      expect(l).deep.equal(t.expected)
+    })
+  })
+})
+
 describe('Find combination', function () {
   const tests = [{
     nCharacters: 0,
@@ -112,7 +126,7 @@ describe('Find combination', function () {
     })
   })
 })
-describe.only('Find combination mod', function () {
+describe('Find combination mod', function () {
   const tests = [{
     nCharacters: 0,
     value: 0,

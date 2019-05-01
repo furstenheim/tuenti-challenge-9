@@ -4,7 +4,8 @@ module.exports = {
   valueInRanges,
   findMinimumInterstitialLength,
   findCombination,
-  findCombinationMod
+  findCombinationMod,
+  solveCase
 }
 const _ = require('lodash')
 const allRanges = [ [ [ 0, 0 ] ],
@@ -23,15 +24,28 @@ function parseInput (input) {
   const nMessages = parseInt(readLineString(input))
   for (let i = 0; i < nMessages; i++) {
     const c = parseCase(input)
+    const solution = solveCase(c)
+    console.log(solution.map(c => c.toString()))
   }
 }
 
-function solveCase (c) {
 
+function solveCase (c) {
+  const splitOriginal = splitMessage(c.original)
+  const splitCopy = splitMessage(c.copy)
+  const {diff, payloadHash} = findMinimumInterstitialLength(splitOriginal, splitCopy)
+  const payload = []
+  for (const i in payloadHash) {
+    const combination = findCombinationMod(payloadHash[i], findRepetitions(i, diff))
+    for (const j in combination) {
+      payload[parseInt(i) + j * 16] = combination[j]
+    }
+  }
+  return String.fromCharCode(...payload)
 }
 
 function findCombinationMod (value, nCharacters) {
-  const prerange = preranges[value]
+  const prerange = preranges[nCharacters]
   const baseline = prerange.l - prerange.l % 256
   const firstValue = baseline + value
   let objectiveValue
@@ -57,21 +71,15 @@ function findCombination (value, nCharacters) {
   return combination
 }
 
-
-function setUpComputations (c) {
-  const original = c.original
-  const copy = c.copy
-  const splitOriginal = splitMessage(c.original)
-  const splitCopy = splitMessage(c.copy)
-  const {diff, payloadHash} = findMinimumInterstitialLength(splitOriginal, splitCopy)
+function findRepetitions (i, diff) {
+  return i < (diff % 16) ? parseInt(diff / 16) + 1 : (parseInt(diff / 16))
 }
-
 function findMinimumInterstitialLength (splitOriginal, splitCopy) {
   const payloadHash = []
   for (let diff = 0; diff < allRanges.length * 16; diff++) {
     let isPossible = true
     for (let i = 0; i < 16; i++) {
-      const repetitions = i < (diff % 16) ? parseInt(diff / 16) + 1 : (parseInt(diff / 16))
+      const repetitions = findRepetitions(i, diff)
       const ranges = allRanges[repetitions]
       if (!ranges) {
         throw new Error(`Bad index: ${repetitions}`)
