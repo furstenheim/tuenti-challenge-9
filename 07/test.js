@@ -1,10 +1,10 @@
 // same input and output
 // less than 16 char
 // one less the other one more
+// tests minimal with same length
 const _ = require('lodash')
 const lib = require('./lib')
 const {expect} = require('chai')
-console.log('###########')
 describe('Split message', function () {
   const tests = [{
     m: Buffer.from('Subject: Boat;From: Charlie;To: Desmond;------Not Penny\'s boat'),
@@ -59,4 +59,23 @@ describe('Value in ranges', function () {
       expect(inside).equal(t.expected)
     })
   })
+})
+
+describe.only('findMinimumInterstitialLength', function () {
+  const tests = [{
+    original: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Not Penny's boat`),
+    copy: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Penny's boat :)`),
+    expected: 49
+  }]
+  _.forEach(tests, function (t, i) {
+    it('#' + i, function () {
+      const originalSplit = lib.splitMessage(t.original)
+      const copySplit = lib.splitMessage(t.copy)
+      console.log(originalSplit)
+      console.log(copySplit)
+      const l = lib.findMinimumInterstitialLength(originalSplit, copySplit)
+      expect(l).equal(t.expected)
+    })
+  })
+
 })
