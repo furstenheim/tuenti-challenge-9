@@ -25,7 +25,7 @@ func main () {
 	}
 }
 
-type Letter rune
+type Letter string
 type Hint []Letter
 type Case struct {
 	hints            []Hint
@@ -55,7 +55,11 @@ func parseCase (reader * bufio.Reader) Case {
 		if len(hint) == 0 {
 			log.Fatal("Empty clue")
 		}
-		hints[i] = Hint(hint)
+		hArray := make([]Letter, len(hint))
+		for i, c := range(hint) {
+			hArray[i] = Letter(c)
+		}
+		hints[i] = Hint(hArray)
 	}
 	return Case{hints: hints}
 }
@@ -63,6 +67,7 @@ func parseCase (reader * bufio.Reader) Case {
 func (c * Case) Solve () Solution {
 	c.computeDictionary()
 	c.computeMatrices()
+	log.Println("c", c.indegree, c.indegreeByLetter)
 	return c.computeSolution()
 }
 
@@ -152,7 +157,7 @@ func (c * Case) compareClues (h1, h2 Hint) (out, in Letter, found bool) {
 		if i >= len(h2) {
 			// Not really a clue. This is for example gg -> ggg
 			log.Println("Found useless clues", h1, h2)
-			return '0', '0', false
+			return "0", "0", false
 		}
 		l2 := h2[i]
 		if l2 != l1 {
@@ -160,7 +165,7 @@ func (c * Case) compareClues (h1, h2 Hint) (out, in Letter, found bool) {
 		}
 	}
 	log.Println("Found useless clue, 2", h1, h2)
-	return '0', '0', false
+	return "0", "0", false
 }
 
 func (s * Solution) printResult (i int) {
