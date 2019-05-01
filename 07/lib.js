@@ -3,7 +3,8 @@ module.exports = {
   parseInput,
   valueInRanges,
   findMinimumInterstitialLength,
-  findCombination
+  findCombination,
+  findCombinationMod
 }
 const _ = require('lodash')
 const allRanges = [ [ [ 0, 0 ] ],
@@ -30,7 +31,16 @@ function solveCase (c) {
 }
 
 function findCombinationMod (value, nCharacters) {
-
+  const prerange = preranges[value]
+  const baseline = prerange.l - prerange.l % 256
+  const firstValue = baseline + value
+  let objectiveValue
+  if (firstValue < prerange.l) {
+    objectiveValue = firstValue + 256
+  } else {
+    objectiveValue = firstValue
+  }
+  return findCombination(objectiveValue, nCharacters)
 }
 
 function findCombination (value, nCharacters) {

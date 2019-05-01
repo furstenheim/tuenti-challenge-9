@@ -79,7 +79,7 @@ describe('findMinimumInterstitialLength', function () {
   })
 })
 
-describe.only('Find combintation', function () {
+describe('Find combination', function () {
   const tests = [{
     nCharacters: 0,
     value: 0,
@@ -104,6 +104,47 @@ describe.only('Find combintation', function () {
     nCharacters: 4,
     value: 250,
     expected: [48, 48, 48, 106]
+  }]
+  _.forEach(tests, function (t, i) {
+    it('#' + i, function () {
+      const combination = lib.findCombination(t.value, t.nCharacters)
+      expect(combination).deep.equal(t.expected)
+    })
+  })
+})
+describe.only('Find combination mod', function () {
+  const tests = [{
+    nCharacters: 0,
+    value: 0,
+    expected: []
+  }, {
+    nCharacters: 1,
+    value: 48,
+    expected: [48]
+  }, {
+    nCharacters: 1,
+    value: 49,
+    expected: [49]
+  }, {
+    nCharacters: 2,
+    value: 98,
+    expected: [48, 50]
+  }, {
+    nCharacters: 3,
+    value: 250,
+    expected: [48, 80, 122]
+  }, {
+    nCharacters: 4,
+    value: 250,
+    expected: [48, 48, 48, 106]
+  }, {
+    nCharacters: 4,
+    value: 257,
+    expected: [48, 48, 48, 113]
+  }, {
+    nCharacters: 4,
+    value: 193,
+    expected: [48, 48, 48, 49]
   }]
   _.forEach(tests, function (t, i) {
     it('#' + i, function () {
