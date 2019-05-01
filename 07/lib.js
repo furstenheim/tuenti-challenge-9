@@ -2,21 +2,20 @@ module.exports = {
   splitMessage,
   parseInput,
   valueInRanges,
-  findMinimumInterstitialLength
+  findMinimumInterstitialLength,
+  findCombination
 }
 const _ = require('lodash')
 const allRanges = [ [ [ 0, 0 ] ],
   [ [ 48, 122 ] ],
   [ [ 96, 244 ] ],
   [ [ 0, 110 ], [ 144, 255 ] ],
-  [ [ 0, 232 ], [ 192, 255 ] ],
-  [ [ 0, 98 ], [ 240, 255 ] ],
-  [ [ 0, 220 ], [ 32, 255 ] ],
-  [ [ 0, 86 ], [ 80, 255 ] ],
-  [ [ 0, 208 ], [ 128, 255 ] ],
-  [ [ 0, 74 ], [ 176, 255 ] ],
-  [ [ 0, 196 ], [ 224, 255 ] ] ]
-
+  [ [ 0, 255 ] ]]
+const preranges = [ { i: 0, l: 0, u: 0, lu: 0, d: 0 },
+  { i: 1, l: 48, u: 122, lu: 122, d: 74 },
+  { i: 2, l: 96, u: 244, lu: 244, d: 148 },
+  { i: 3, l: 144, u: 366, lu: 110, d: 222 },
+  { i: 4, l: 192, u: 488, lu: 232, d: 296 }]
 
 // parseInput(input)
 function parseInput (input) {
@@ -30,14 +29,35 @@ function solveCase (c) {
 
 }
 
+function findCombinationMod (value, nCharacters) {
+
+}
+
+function findCombination (value, nCharacters) {
+  const prerange = preranges[nCharacters]
+  if (!(prerange.l <= value && prerange.u >= value) ) {
+    throw new Error('Impossible combination')
+  }
+  const combination = []
+  for (let i = nCharacters - 1; i >= 0; i--) {
+    const char = Math.min(122, value - i * 48)
+    combination[i] = char
+    value -= char
+  }
+  return combination
+}
+
+
 function setUpComputations (c) {
   const original = c.original
   const copy = c.copy
   const splitOriginal = splitMessage(c.original)
   const splitCopy = splitMessage(c.copy)
+  const {diff, payloadHash} = findMinimumInterstitialLength(splitOriginal, splitCopy)
 }
 
 function findMinimumInterstitialLength (splitOriginal, splitCopy) {
+  const payloadHash = []
   for (let diff = 0; diff < allRanges.length * 16; diff++) {
     let isPossible = true
     for (let i = 0; i < 16; i++) {
@@ -49,14 +69,16 @@ function findMinimumInterstitialLength (splitOriginal, splitCopy) {
       const hashPosition = (i + splitCopy.m1.length) % 16
       const vOriginal = splitOriginal.hash[hashPosition]
       const vCopy = splitCopy.m1Hash[hashPosition] + splitCopy.m2UnshiftedHash[((hashPosition - splitCopy.m1.length - diff) % 16 + 16) % 16]
-      const inRange = valueInRanges(((vOriginal - vCopy) % 256 + 256) % 256, ranges)
+      const necessaryValue = ((vOriginal - vCopy) % 256 + 256) % 256
+      payloadHash[i] = necessaryValue
+      const inRange = valueInRanges(necessaryValue, ranges)
       if (!inRange) {
         isPossible = false
         break
       }
     }
     if (isPossible) {
-      return diff
+      return {diff, payloadHash}
     }
   }
   throw new Error('Diff not possible')

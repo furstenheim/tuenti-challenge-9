@@ -61,11 +61,11 @@ describe('Value in ranges', function () {
   })
 })
 
-describe.only('findMinimumInterstitialLength', function () {
+describe('findMinimumInterstitialLength', function () {
   const tests = [{
     original: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Not Penny's boat`),
     copy: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Penny's boat :)`),
-    expected: 49
+    expected: {diff: 49, payloadHash: [ 124, 39, 75, 33, 31, 15, 178, 226, 236, 71, 251, 89, 197, 4, 191, 238 ]}
   }]
   _.forEach(tests, function (t, i) {
     it('#' + i, function () {
@@ -74,8 +74,41 @@ describe.only('findMinimumInterstitialLength', function () {
       console.log(originalSplit)
       console.log(copySplit)
       const l = lib.findMinimumInterstitialLength(originalSplit, copySplit)
-      expect(l).equal(t.expected)
+      expect(l).deep.equal(t.expected)
     })
   })
+})
 
+describe.only('Find combintation', function () {
+  const tests = [{
+    nCharacters: 0,
+    value: 0,
+    expected: []
+  }, {
+    nCharacters: 1,
+    value: 48,
+    expected: [48]
+  }, {
+    nCharacters: 1,
+    value: 49,
+    expected: [49]
+  }, {
+    nCharacters: 2,
+    value: 98,
+    expected: [48, 50]
+  }, {
+    nCharacters: 3,
+    value: 250,
+    expected: [48, 80, 122]
+  }, {
+    nCharacters: 4,
+    value: 250,
+    expected: [48, 48, 48, 106]
+  }]
+  _.forEach(tests, function (t, i) {
+    it('#' + i, function () {
+      const combination = lib.findCombination(t.value, t.nCharacters)
+      expect(combination).deep.equal(t.expected)
+    })
+  })
 })
