@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"sort"
+)
 
 type Case struct {
 	op1, op2, result KanjiNumber
@@ -19,6 +22,13 @@ type ProcessedNumber struct {
 type PowerOfTen struct {
 	hasRune, listsUnit bool
 	rune               rune
+	value int
+}
+
+type ConfusedNumber struct {
+	allowFirstDigit bool
+	powersOfTen []PowerOfTen
+	digits 	    []rune
 }
 const MAX_NUMBER = 99999
 const MIN_NUMBER = 1
@@ -27,26 +37,31 @@ var powersOfTen = []PowerOfTen{
 		hasRune: false,
 		listsUnit: true,
 		rune: 'x',
+		value: 1,
 	},
 	{
 		hasRune: true,
 		listsUnit: false,
 		rune: '十',
+		value: 10,
 	},
 	{
 		hasRune: true,
 		listsUnit: false,
 		rune: '百',
+		value: 100,
 	},
 	{
 		hasRune: true,
 		listsUnit: false,
 		rune: '千',
+		value: 1000,
 	},
 	{
 		hasRune: true,
 		listsUnit: true,
 		rune: '万',
+		value: 10000,
 	},
 }
 
@@ -62,11 +77,45 @@ var digitToKanji = map[int]rune {
 	9: '九',
 }
 
+var powersOfTenByRune = map[rune]PowerOfTen {
+
+}
+func init () {
+	for _, v := range(powersOfTen) {
+		if v.hasRune {
+			powersOfTenByRune[v.rune] = v
+		}
+	}
+}
+
 /*
 func toRawNumber (n int) KanjiNumber {
 
 }
 */
+
+
+func (n KanjiNumber) toConfusedNumber () ConfusedNumber {
+	allowFirstDigit := false
+	confusedPowers := []PowerOfTen{}
+	digits := []rune{}
+	for _, k := range(n) {
+		if p, ok := powersOfTenByRune[k]; ok {
+			confusedPowers = append(confusedPowers, p)
+		} else {
+			allowFirstDigit = true
+			digits = append(digits, k)
+		}
+	}
+	sort.Slice(confusedPowers, func (i, j int) bool {
+		return confusedPowers[i].value < confusedPowers[j].value
+	})
+	return ConfusedNumber{
+		allowFirstDigit: allowFirstDigit,
+		powersOfTen: confusedPowers,
+		digits: digits,
+	}
+}
 
 func intToKanji (n int) KanjiNumber {
 	if n > MAX_NUMBER {

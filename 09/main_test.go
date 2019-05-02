@@ -89,3 +89,42 @@ func TestNumberToKanji (t *testing.T) {
 		assert.Equal(t, tc.expected, expected)
 	}
 }
+
+func TestToConfusedNumber (t *testing.T) {
+	testCases := []struct{
+		original KanjiNumber
+		expected ConfusedNumber
+	}{
+		{
+			original: KanjiNumber{'二'},
+			expected: ConfusedNumber{
+				powersOfTen: []PowerOfTen{},
+				digits: []rune{'二'},
+				allowFirstDigit: true,
+			},
+
+		},
+		{
+			original: KanjiNumber{'七', '十', '二', '千'},
+			expected: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['千']},
+				digits: []rune{'七', '二'},
+				allowFirstDigit: true,
+			},
+
+		},
+		{
+			original: KanjiNumber{'十'},
+			expected: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十']},
+				digits: []rune{},
+				allowFirstDigit: false,
+			},
+
+		},
+	}
+	for _, tc := range(testCases) {
+		expected := tc.original.toConfusedNumber()
+		assert.Equal(t, tc.expected, expected)
+	}
+}
