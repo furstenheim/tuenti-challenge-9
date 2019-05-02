@@ -137,6 +137,7 @@ func TestToConfusedNumber (t *testing.T) {
 	}
 }
 
+// TODO test several without digits
 func TestFindAllPossibleCombinations (t *testing.T) {
 	testCases := []struct{
 		expected []int
@@ -236,8 +237,19 @@ func TestSolve (t *testing.T) {
 				op2: KanjiNumber{'二', '三', '百', '十', '二'},
 				result: KanjiNumber{'四', '二', '千', '百', '十', '二'},
 			},
-
-
+		},
+		{
+			expected: Solution{
+				n1: 250,
+				n2: 65,
+				operator: "*",
+				result: 16250,
+			},
+			c: Case{
+				op1: KanjiNumber{'二', '百', '五', '十'},
+				op2: KanjiNumber{'六', '十', '五'},
+				result: KanjiNumber{'一', '万', '六', '千', '二', '百', '五', '十'},
+			},
 		},
 	}
 	for _, tc := range(testCases) {

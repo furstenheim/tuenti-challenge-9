@@ -3,8 +3,58 @@ package main
 import (
 	"log"
 	"sort"
+	"bufio"
+	"os"
+	"strings"
+	"strconv"
+	"fmt"
 )
 
+func main () {
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	firstLineFields := strings.Fields(line)
+	numberOfCases, err := strconv.Atoi(firstLineFields[0])
+	if (err != nil) {
+		log.Fatal(err)
+	}
+	for i := 0; i < numberOfCases; i ++ {
+		log.Println(i)
+		c := parseCase(reader)
+		s := c.solve()
+		s.printResult(i)
+	}
+}
+
+var delimiterRunes = map[rune]bool{
+	'O': true,
+	'P': true,
+	'E': true,
+	'R': true,
+	'A': true,
+	'T': true,
+	' ': true,
+	'=': true,
+	'\n': true,
+}
+func parseCase (reader *bufio.Reader) Case {
+	line, e := reader.ReadString('\n')
+	handleError(e)
+	fields := strings.FieldsFunc(line, func (r rune) bool {
+		return delimiterRunes[r]
+	})
+	return Case{
+		op1: KanjiNumber(fields[0]),
+		op2: KanjiNumber(fields[1]),
+		result: KanjiNumber(fields[2]),
+	}
+}
+
+func (s Solution) printResult (i int) {
+	var text1 string
+	text1 = fmt.Sprintf("Case #%d: %d %s %d = %d", i + 1, s.n1, s.operator, s.n2, s.result)
+	fmt.Println(text1)
+}
 type Case struct {
 	op1, op2, result KanjiNumber
 }
@@ -49,7 +99,7 @@ var operations = []Operation{
 			return i - j
 		},
 	},{
-		symbol: "+",
+		symbol: "*",
 		operation: func (i, j int) int {
 			return i * j
 		},
@@ -158,7 +208,7 @@ func (c Case) solve () Solution {
 
 		}
 	}
-	log.Fatal("Solution not possible")
+	log.Fatal("Solution not possible", string(c.op1), ' ', string(c.op2), ' ', string(c.result))
 	return Solution{}
 }
 
@@ -359,4 +409,9 @@ func permutations(arr []int)[][]int{
 	}
 	helper(arr, len(arr))
 	return res
+}
+func handleError (e error) {
+	if e != nil {
+		log.Fatal(e)
+	}
 }
