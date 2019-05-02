@@ -171,13 +171,14 @@ func (c *Case) bestBranch (position Position, vs VisitState) (found bool, capaci
 	c.visitedCache[position] = CacheItem{
 		currentRemainingRange: vs.remainingRange,
 	}
-	if vs.remainingCapacity < 0 || vs.remainingRange < 0 {
+	currentMoon := c.moons[position.currentMoonIndex]
+	if vs.remainingCapacity < currentMoon.load {
 		return false, -1,  [15]bool{}
 	}
-	if vs.remainingRange < c.moons[position.currentMoonIndex].radius {
+	if vs.remainingRange < currentMoon.radius {
 		return false, -1, [15]bool{}
 	}
-	currentCapacity := c.moons[position.currentMoonIndex].load
+	currentCapacity := currentMoon.load
 	capacity = 0
 	bestVisits = position.visitedMoons
 	for i, m := range(c.moons) {
@@ -186,7 +187,7 @@ func (c *Case) bestBranch (position Position, vs VisitState) (found bool, capaci
 			copyMoons[i] = true
 			nextTime := vs.time + 1
 			vs2 := VisitState{
-				remainingRange: vs.remainingRange - c.moons[position.currentMoonIndex].distanceTo(m, nextTime),
+				remainingRange: vs.remainingRange - currentMoon.distanceTo(m, nextTime),
 				remainingCapacity: vs.remainingCapacity - m.load,
 			}
 			position2 := Position{
