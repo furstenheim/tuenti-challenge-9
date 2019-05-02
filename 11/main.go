@@ -13,6 +13,8 @@ func main() {
 	lp.SetObjName("Z")
 	lp.SetObjDir(glpk.MAX)
 
+	shipRange := 6.
+	capacity := 20.
 	m0 := Moon{
 		load        : 4,
 		radius      : 2.0,
@@ -49,7 +51,7 @@ func main() {
 	lp.SetColName(6, "z010")
 	lp.SetColBnds(6, glpk.LO, 0, 0)
 
-	lp.AddRows(10)
+	lp.AddRows(12)
 	lp.SetRowName(1, "one planet at t 0")
 	// TODO check this is not glpk.DB
 	lp.SetRowBnds(1, glpk.UP, 0.0, 1)
@@ -74,16 +76,37 @@ func main() {
 	lp.SetRowName(10, "constraint 2 on z010")
 	lp.SetRowBnds(10, glpk.LO, -1, 0)
 
+	lp.SetRowName(11, "constraint on range")
+	lp.SetRowBnds(11, glpk.UP, 0, shipRange)
 
+	lp.SetRowName(12, "Constraints on capacity")
+	lp.SetRowBnds(12, glpk.UP, 0, capacity)
+
+
+	// TODO set capacity cap
 	fmt.Printf("col1: %v\n", lp.ColKind(1) == glpk.CV)
 
 	// index 0 and value 0 are ignored
-	ind := []int32{-1, 1, 2, 3, 4}
+	ind := []int32{-1, 1, 2, 3, 4, 5, 6}
 	mat := [][]float64{
-		{0, 1, 0, 1.0, 0},
-		{0, 0, 1, 0, 1},
-		{0, 1, 1.0, 0.0, 0},
-		{0, 0, 0, 1, 1},
+		{0, 1, 0, 1.0, 0, 0, 0},
+		{0, 0, 1, 0, 1, 0, 0},
+		{0, 1, 1.0, 0.0, 0, 0, 0},
+		{0, 0, 0, 1, 1, 0, 0},
+
+		{0, 1, 0, 0, 0, -1, 0},
+		{0, 0, 0, 0, 1, -1, 0},
+		{0, -1, 0, 0, -1, 1, 0},
+
+		{0, 0, 1, 0, 0, 0, -1},
+		{0, 0, 0, 1, 0, 0, -1},
+		{0, 0, -1, -1, 0, 0, 1},
+
+		{0, m0.radius, m0.radius, m1.radius, m1.radius, m0.distanceTo(m1, 1), m1.distanceTo(m0, 1)},
+		{0, m0.load, m0.load, m1.load, m1.load, 0, 0},
+
+
+
 	}
 	for i := 0; i < len(mat); i++ {
 		// main constraints
