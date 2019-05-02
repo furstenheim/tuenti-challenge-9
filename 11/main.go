@@ -63,7 +63,12 @@ func (c *Case) solve () {
 
 	fmt.Printf("%s = %g", lp.ObjName(), lp.MipObjVal())
 	for i := 0; i < c.getNCols(); i++ {
-		fmt.Printf("; %s = %g", lp.ColName(i+1), lp.MipColVal(i+1))
+		fmt.Printf("; %s = %g for variable %d", lp.ColName(i+1), lp.MipColVal(i+1), i + 1)
+		fmt.Println()
+	}
+	for j := 0; j < c.getNRows(); j++ {
+		a, b := lp.MatRow(j + 1)
+		log.Println(lp.RowName(j +1 ), lp.RowLB(j + 1), a, b, lp.RowUB(j + 1), lp.RowType(j + 1), glpk.LO)
 	}
 	fmt.Println()
 	lp.Delete()
@@ -88,6 +93,7 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) (tripCheckIndexes []int3
 			tripCheckValues = append(tripCheckValues, 1)
 		}
 	}
+	lp.SetRowName(c.getCapacityIndex(), "Capacity constraint")
 	lp.SetMatRow(c.getCapacityIndex(), capacityIndexes, capacityValues)
 	for time := 0; time < len(c.moons); time++ {
 		indexes := []int32{-1} // 0 index is ignored
@@ -125,7 +131,7 @@ func (c * Case) setUpQuadraticTerms (lp *glpk.Prob, tripCheckIndexes []int32, tr
 				}
 				quadraticIndex := c.getQuadraticTermIndex(time, m1, m2)
 				m1Index := c.getTimeMoonIndex(time, m1)
-				m2Index := c.getTimeMoonIndex(time, m2)
+				m2Index := c.getTimeMoonIndex(time + 1, m2)
 				lp.SetColName(quadraticIndex, fmt.Sprintf("Term z%d%d%d", time, m1, m2))
 				lp.SetColBnds(quadraticIndex, glpk.LO, 0, 0)
 				baseIndex := c.getBaseQuadraticConditionIndex(time, m1, m2)
@@ -139,8 +145,9 @@ func (c * Case) setUpQuadraticTerms (lp *glpk.Prob, tripCheckIndexes []int32, tr
 				lp.SetMatRow(baseIndex + 1, []int32{-1, int32(m2Index), int32(quadraticIndex)}, []float64{0, 1, -1})
 
 				lp.SetRowName(baseIndex + 2, fmt.Sprintf("constraint 2 on z%d%d%d", time, m1, m2))
-				lp.SetRowBnds(baseIndex + 2, glpk.LO, -1, 0)
+				lp.SetRowBnds(baseIndex + 2, glpk.LO, -1, -1)
 				lp.SetMatRow(baseIndex + 2, []int32{-1, int32(m1Index), int32(m2Index), int32(quadraticIndex)}, []float64{0, -1, -1, 1})
+				log.Println(baseIndex, "~~~~~~~~~~~")
 				rangeIndexes = append(rangeIndexes, int32(quadraticIndex))
 				rangeValues = append(rangeValues, moon1.distanceTo(moon2, float64(time + 1)))
 
@@ -177,7 +184,7 @@ func (c * Case) getSameTimeConditionIndex (time int) int {
 	return 3+ 1 + len(c.moons) + time
 }
 func (c * Case) getBaseQuadraticConditionIndex (time, m1, m2 int) int {
-	return 3 + 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
+	return 3 + 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + 3 * m1 * len(c.moons) + 3 * m2
 }
 
 func (c * Case) getRangeIndex () int {
