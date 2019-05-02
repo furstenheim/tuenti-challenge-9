@@ -28,7 +28,7 @@ type PowerOfTen struct {
 type ConfusedNumber struct {
 	allowFirstDigit bool
 	powersOfTen []PowerOfTen
-	digits 	    []rune
+	digits 	    []int
 }
 const MAX_NUMBER = 99999
 const MIN_NUMBER = 1
@@ -77,6 +77,17 @@ var digitToKanji = map[int]rune {
 	9: '九',
 }
 
+var runeToDigit = map[rune]int {
+	'一': 1,
+	'二': 2,
+	'三': 3,
+	'四': 4,
+	'五': 5,
+	'六': 6,
+	'七': 7,
+	'八': 8,
+	'九': 9,
+}
 var powersOfTenByRune = map[rune]PowerOfTen {
 
 }
@@ -98,13 +109,13 @@ func toRawNumber (n int) KanjiNumber {
 func (n KanjiNumber) toConfusedNumber () ConfusedNumber {
 	allowFirstDigit := false
 	confusedPowers := []PowerOfTen{}
-	digits := []rune{}
+	digits := []int{}
 	for _, k := range(n) {
 		if p, ok := powersOfTenByRune[k]; ok {
 			confusedPowers = append(confusedPowers, p)
 		} else {
 			allowFirstDigit = true
-			digits = append(digits, k)
+			digits = append(digits, runeToDigit[k])
 		}
 	}
 	sort.Slice(confusedPowers, func (i, j int) bool {
@@ -117,11 +128,63 @@ func (n KanjiNumber) toConfusedNumber () ConfusedNumber {
 	}
 }
 
-/*
-func (c ConfusedNumber) findAllPossibleNumbers () []int {
+func (c ConfusedNumber) findAllPossibleNumbersForPermutation (digits []int) []int {
+	var helper func (current []int, remainingPowers []PowerOfTen, remainingDigits []int, allowUnits bool, firstGo bool) []int
+	helper = func (current []int, remainingPowers []PowerOfTen, remainingDigits []int, allowUnits bool, firstGo bool) []int {
+		if len(remainingPowers) == 0 && len(remainingDigits) == 0 {
+			return current
+		}
 
+		if len(remainingDigits) > 0 && !allowUnits && len(remainingPowers) == 0 {
+			return []int{}
+		}
+		if len(remainingDigits) == 0 && remainingPowers[0].listsUnit {
+			return []int{}
+		}
+		nextCurrent := []int{}
+		if allowUnits {
+			current2 := append(current, remainingDigits[0])
+			nextCurrent = append(nextCurrent, helper(current2, remainingPowers, remainingDigits[1:], false, false)...)
+		}
+		if len(remainingPowers) > 0 {
+			nextPower := remainingPowers[0]
+			if !nextPower.listsUnit {
+				current2 := make([]int, len(current))
+				if firstGo {
+					current2 = append(current2, nextPower.value)
+				}
+				for i, v := range(current) {
+					current2[i] = v + nextPower.value
+				}
+				nextCurrent = append(nextCurrent,
+					helper(current2, remainingPowers[1:], remainingDigits, false, false)...
+				)
+			}
+			if len(remainingDigits) > 0 {
+				if nextDigit := remainingDigits[0]; nextDigit != 1 || nextPower.listsUnit {
+					current2 := make([]int, len(current))
+					if firstGo {
+						current2 = append(current2, nextPower.value * nextDigit)
+					}
+
+					for i, v := range(current) {
+						current2[i] = v + nextPower.value * nextDigit
+					}
+
+					nextCurrent = append(nextCurrent,
+						helper(current2, remainingPowers[1:], remainingDigits[1:], false, false)...
+					)
+				}
+			}
+
+		}
+		return nextCurrent
+	}
+
+	return helper([]int{}, c.powersOfTen, digits, c.allowFirstDigit, true)
 }
-*/
+
+
 func isUnitRune (r rune) bool {
 	return r == '一'
 }
@@ -196,13 +259,13 @@ func (k KanjiNumber) reverse () {
 	}
 }
 
-func permutations(arr []rune)[][]rune{
-	var helper func([]rune, int)
-	res := [][]rune{}
+func permutations(arr []int)[][]int{
+	var helper func([]int, int)
+	res := [][]int{}
 
-	helper = func(arr []rune, n int){
+	helper = func(arr []int, n int){
 		if n == 1{
-			tmp := make([]rune, len(arr))
+			tmp := make([]int, len(arr))
 			copy(tmp, arr)
 			res = append(res, tmp)
 		} else {

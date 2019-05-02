@@ -99,7 +99,7 @@ func TestToConfusedNumber (t *testing.T) {
 			original: KanjiNumber{'二'},
 			expected: ConfusedNumber{
 				powersOfTen: []PowerOfTen{},
-				digits: []rune{'二'},
+				digits: []int{2},
 				allowFirstDigit: true,
 			},
 
@@ -108,7 +108,15 @@ func TestToConfusedNumber (t *testing.T) {
 			original: KanjiNumber{'七', '十', '二', '千'},
 			expected: ConfusedNumber{
 				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['千']},
-				digits: []rune{'七', '二'},
+				digits: []int{7, 2},
+				allowFirstDigit: true,
+			},
+
+		},		{
+			original: KanjiNumber{'七', '十', '二', '二', '千'},
+			expected: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['千']},
+				digits: []int{7, 2, 2},
 				allowFirstDigit: true,
 			},
 
@@ -117,7 +125,7 @@ func TestToConfusedNumber (t *testing.T) {
 			original: KanjiNumber{'十'},
 			expected: ConfusedNumber{
 				powersOfTen: []PowerOfTen{powersOfTenByRune['十']},
-				digits: []rune{},
+				digits: []int{},
 				allowFirstDigit: false,
 			},
 
@@ -128,24 +136,112 @@ func TestToConfusedNumber (t *testing.T) {
 		assert.Equal(t, tc.expected, expected)
 	}
 }
-func TestPermutations (t *testing.T) {
+
+func TestFindAllPossibleCombinations (t *testing.T) {
 	testCases := []struct{
-		original []rune
-		expected [][]rune
+		expected []int
+		confused ConfusedNumber
+		digits []int
 	}{
 		{
-			original: []rune{'二'},
-			expected: [][]rune{{'二'}},
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{},
+				digits: []int{2},
+				allowFirstDigit: true,
+			},
+			digits: []int{2},
+			expected: []int{2},
 
 		},
 		{
-			original: []rune{'七', '二'},
-			expected: [][]rune{{'七', '二'}, {'二', '七'}},
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['千']},
+				digits: []int{7, 2},
+				allowFirstDigit: true,
+			},
+			digits: []int{7, 2},
+			expected: []int{2017, 1027, 2070},
 
 		},
 		{
-			original: []rune{'七', '二', '一'},
-			expected: [][]rune{{'一', '二', '七'}, {'一', '七', '二'}, {'七', '二', '一'}, {'七', '一', '二'}, {'二', '一', '七'}, {'二', '七', '一'}},
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['千']},
+				digits: []int{7, 2, 3},
+				allowFirstDigit: true,
+			},
+			digits: []int{7, 2, 3},
+			expected: []int{3027},
+
+		},
+		{
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十']},
+				digits: []int{},
+				allowFirstDigit: false,
+			},
+			digits: []int{},
+			expected: []int{10},
+
+		},
+		{
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['万']},
+				digits: []int{1},
+				allowFirstDigit: true,
+			},
+			digits: []int{1},
+			expected: []int{10010},
+
+		},
+		{
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['万']},
+				digits: []int{1, 2},
+				allowFirstDigit: true,
+			},
+			digits: []int{1, 2},
+			expected: []int{20011},
+
+		},
+		{
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十'], powersOfTenByRune['万']},
+				digits: []int{2, 1},
+				allowFirstDigit: true,
+			},
+			digits: []int{2, 1},
+			expected: []int{10012, 10020},
+
+		},
+	}
+	for _, tc := range(testCases) {
+		expected := tc.confused.findAllPossibleNumbersForPermutation(tc.digits)
+		assert.Equal(t, tc.expected, expected)
+	}
+}
+func TestPermutations (t *testing.T) {
+	testCases := []struct{
+		original []int
+		expected [][]int
+	}{
+		{
+			original: []int{2},
+			expected: [][]int{{2}},
+
+		},
+		{
+			original: []int{5, 2},
+			expected: [][]int{{5, 2}, {2, 5}},
+
+		},
+		{
+			original: []int{2, 2},
+			expected: [][]int{{2, 2}, {2, 2}},
+
+		},
+		{
+			original: []int{5, 2, 1},
+			expected: [][]int{{1, 2, 5}, {1, 5, 2}, {5, 2, 1}, {5, 1, 2}, {2, 1, 5}, {2, 5, 1}},
 
 		},
 	}
