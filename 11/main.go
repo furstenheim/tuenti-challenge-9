@@ -5,37 +5,100 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"bufio"
+	"os"
+	"strings"
+	"strconv"
+	"sort"
 )
 
-func main() {
-
-	shipRange := 6.
-	capacity := 20.
-	m0 := Moon{
-		load        : 4,
-		radius      : 2.0,
-		angle0      : 0,
-		periodHours : 12,
+func main () {
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	firstLineFields := strings.Fields(line)
+	numberOfCases, err := strconv.Atoi(firstLineFields[0])
+	if (err != nil) {
+		log.Fatal(err)
 	}
-	m1 := Moon{
-		load        : 5,
-		radius      : 2.5,
-		angle0      : 3.14,
-		periodHours : 100.0,
+	for i := 0; i < numberOfCases; i ++ {
+		log.Println(i)
+		c := parseCase(reader)
+		s := c.solve()
+		s.printResult(i)
 	}
-	c := Case{
-		moons: []Moon{m0, m1},
-		capacity: capacity,
-		shipRange: shipRange,
-	}
-	c.solve()
 }
 
+func parseCase (reader *bufio.Reader) Case {
+	line, e := reader.ReadString('\n')
+	handleError(e)
+	nMoons, e := strconv.Atoi(strings.Fields(line)[0])
+	handleError(e)
+	moons := make([]Moon, nMoons)
+	radiusLine, e := reader.ReadString('\n')
+	handleError(e)
+	for i, s := range(strings.Fields(radiusLine)) {
+		moons[i].radius, e  = strconv.ParseFloat(s, 64)
+		handleError(e)
+	}
+	angleLine, e := reader.ReadString('\n')
+	handleError(e)
+	for i, s := range(strings.Fields(angleLine)) {
+		moons[i].angle0, e = strconv.ParseFloat(s, 64)
+		handleError(e)
+	}
+
+	periodLine, e := reader.ReadString('\n')
+	handleError(e)
+	for i, s := range(strings.Fields(periodLine)) {
+		moons[i].periodHours, e = strconv.ParseFloat(s, 64)
+		handleError(e)
+	}
+
+	loadLine, e := reader.ReadString('\n')
+	handleError(e)
+	for i, s := range(strings.Fields(loadLine)) {
+		moons[i].loadInt, e = strconv.Atoi(s)
+		handleError(e)
+		moons[i].load = float64(moons[i].loadInt)
+	}
+
+	capacityLine, e := reader.ReadString('\n')
+	handleError(e)
+	capacity, e := strconv.Atoi(strings.Fields(capacityLine)[0])
+	handleError(e)
+
+	shipRangeLine, e := reader.ReadString('\n')
+	handleError(e)
+	shipRange, e := strconv.ParseFloat(strings.Fields(shipRangeLine)[0], 64)
+	handleError(e)
+
+	return Case{
+		moons: moons,
+		capacity: float64(capacity),
+		shipRange: shipRange,
+	}
+}
+
+func (s *Solution) printResult (i int) {
+	var text string
+	if s.found {
+		values := []string{}
+		for _, v := range(s.loads) {
+			values = append(values, fmt.Sprintf("%d", v))
+		}
+		text1 := strings.Join(values, " ")
+		text = fmt.Sprintf("Case #%d: %s", i + 1, text1)
+	} else {
+		text = fmt.Sprintf("Case #%d: None", i + 1)
+	}
+	fmt.Println(text)
+}
 type Moon struct {
 	load        float64
 	radius      float64
 	angle0      float64
 	periodHours float64
+	loadInt int
 }
 
 type Case struct {
@@ -44,7 +107,12 @@ type Case struct {
 	shipRange float64
 }
 
-func (c *Case) solve () {
+type Solution struct {
+	found bool
+	loads []int
+}
+
+func (c *Case) solve () Solution {
 	lp := glpk.New()
 	lp.SetProbName("sample")
 	lp.SetObjName("Z")
@@ -57,21 +125,30 @@ func (c *Case) solve () {
 	iocp := glpk.NewIocp()
 	iocp.SetPresolve(true)
 
+	found := true
+
 	if err := lp.Intopt(iocp); err != nil {
 		log.Fatalf("Mip error: %v", err)
 	}
 
 	fmt.Printf("%s = %g", lp.ObjName(), lp.MipObjVal())
-	for i := 0; i < c.getNCols(); i++ {
-		fmt.Printf("; %s = %g for variable %d", lp.ColName(i+1), lp.MipColVal(i+1), i + 1)
-		fmt.Println()
+	loads := []int{}
+	for time := 0; time < len(c.moons); time++ {
+		for moon, _ := range(c.moons) {
+			value := lp.MipColVal(c.getTimeMoonIndex(time, moon))
+			if value == 1 {
+				loads = append(c.moons[moon].loadInt)
+			}
+		}
 	}
-	for j := 0; j < c.getNRows(); j++ {
-		a, b := lp.MatRow(j + 1)
-		log.Println(lp.RowName(j +1 ), lp.RowLB(j + 1), a, b, lp.RowUB(j + 1), lp.RowType(j + 1), glpk.LO)
-	}
-	fmt.Println()
 	lp.Delete()
+	sort.Slice(loads, func (i, j int) bool {
+		return loads[i] < loads[j]
+	})
+	return Solution{
+		loads: loads,
+		found: found,
+	}
 }
 
 func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) (tripCheckIndexes []int32, tripCheckValues[]float64){
@@ -147,7 +224,6 @@ func (c * Case) setUpQuadraticTerms (lp *glpk.Prob, tripCheckIndexes []int32, tr
 				lp.SetRowName(baseIndex + 2, fmt.Sprintf("constraint 2 on z%d%d%d", time, m1, m2))
 				lp.SetRowBnds(baseIndex + 2, glpk.LO, -1, -1)
 				lp.SetMatRow(baseIndex + 2, []int32{-1, int32(m1Index), int32(m2Index), int32(quadraticIndex)}, []float64{0, -1, -1, 1})
-				log.Println(baseIndex, "~~~~~~~~~~~")
 				rangeIndexes = append(rangeIndexes, int32(quadraticIndex))
 				rangeValues = append(rangeValues, moon1.distanceTo(moon2, float64(time + 1)))
 
@@ -213,3 +289,8 @@ func (m1 Moon) currentAngle (t float64) float64 {
 	return m1.angle0 + 2 * math.Pi * t *  6 / m1.periodHours
 }
 
+func handleError (e error) {
+	if e != nil {
+		log.Fatal(e)
+	}
+}
