@@ -117,6 +117,15 @@ func (n KanjiNumber) toConfusedNumber () ConfusedNumber {
 	}
 }
 
+/*
+func (c ConfusedNumber) findAllPossibleNumbers () []int {
+
+}
+*/
+func isUnitRune (r rune) bool {
+	return r == '一'
+}
+
 func intToKanji (n int) KanjiNumber {
 	if n > MAX_NUMBER {
 		log.Fatal("Number too big", n)
@@ -185,4 +194,32 @@ func (k KanjiNumber) reverse () {
 		opp := len(k)-1-i
 		k[i], k[opp] = k[opp], k[i]
 	}
+}
+
+func permutations(arr []rune)[][]rune{
+	var helper func([]rune, int)
+	res := [][]rune{}
+
+	helper = func(arr []rune, n int){
+		if n == 1{
+			tmp := make([]rune, len(arr))
+			copy(tmp, arr)
+			res = append(res, tmp)
+		} else {
+			for i := 0; i < n; i++{
+				helper(arr, n - 1)
+				if n % 2 == 1{
+					tmp := arr[i]
+					arr[i] = arr[n - 1]
+					arr[n - 1] = tmp
+				} else {
+					tmp := arr[0]
+					arr[0] = arr[n - 1]
+					arr[n - 1] = tmp
+				}
+			}
+		}
+	}
+	helper(arr, len(arr))
+	return res
 }

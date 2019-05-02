@@ -128,3 +128,30 @@ func TestToConfusedNumber (t *testing.T) {
 		assert.Equal(t, tc.expected, expected)
 	}
 }
+func TestPermutations (t *testing.T) {
+	testCases := []struct{
+		original []rune
+		expected [][]rune
+	}{
+		{
+			original: []rune{'二'},
+			expected: [][]rune{{'二'}},
+
+		},
+		{
+			original: []rune{'七', '二'},
+			expected: [][]rune{{'七', '二'}, {'二', '七'}},
+
+		},
+		{
+			original: []rune{'七', '二', '一'},
+			expected: [][]rune{{'一', '二', '七'}, {'一', '七', '二'}, {'七', '二', '一'}, {'七', '一', '二'}, {'二', '一', '七'}, {'二', '七', '一'}},
+
+		},
+	}
+	for _, tc := range(testCases) {
+		expected := permutations(tc.original)
+		assert.Subset(t, tc.expected, expected)
+		assert.Subset(t, expected, tc.expected)
+	}
+}
