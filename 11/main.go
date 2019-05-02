@@ -80,16 +80,16 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
 			lp.SetColKind(c.getTimeMoonIndex(time, moon), glpk.IV)
 			lp.SetColBnds(c.getTimeMoonIndex(time, moon), glpk.DB, 0, 1)
 			lp.SetObjCoef(c.getTimeMoonIndex(time, moon), moonObj.load)
-			capacityIndexes = append(capacityIndexes, c.getTimeMoonIndex(time, moon))
+			capacityIndexes = append(capacityIndexes, int32(c.getTimeMoonIndex(time, moon)))
 			capacityValues = append(capacityValues, moonObj.load)
 		}
 	}
 	lp.SetMatRow(c.getCapacityIndex(), capacityIndexes, capacityValues)
 	for time := 0; time < len(c.moons); time++ {
-		indexes := []int{-1} // 0 index is ignored
-		matrixValues := []int{-1}
+		indexes := []int32{-1} // 0 index is ignored
+		matrixValues := []float64{-1}
 		for moon := 0; moon < len(c.moons); moon++ {
-			indexes = append(indexes, c.getTimeMoonIndex(time, moon))
+			indexes = append(indexes, int32(c.getTimeMoonIndex(time, moon)))
 			matrixValues = append(matrixValues, 1)
 		}
 		lp.SetRowName(c.getSameTimeConditionIndex(time), fmt.Sprintf("Spaceshift at time %d in only one moon", time))
@@ -97,10 +97,10 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
 		lp.SetMatRow(c.getSameTimeConditionIndex(time), indexes, matrixValues)
 	}
 	for moon := 0; moon < len(c.moons); moon++ {
-		indexes := []int{-1} // 0 index is ignored
-		matrixValues := []int{-1}
+		indexes := []int32{-1} // 0 index is ignored
+		matrixValues := []float64{-1}
 		for time := 0; time < len(c.moons); time++ {
-			indexes = append(indexes, c.getTimeMoonIndex(time, moon))
+			indexes = append(indexes, int32(c.getTimeMoonIndex(time, moon)))
 			matrixValues = append(matrixValues, 1)
 		}
 		lp.SetRowName(c.getSameMoonConditionIndex(moon), fmt.Sprintf("Spaceshift at moon %d in only one time", moon))
@@ -127,16 +127,16 @@ func (c * Case) setUpQuadraticTerms (lp *glpk.Prob) {
 
 				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 0 on z%d%d%d", time, m1, m2))
 				lp.SetRowBnds(baseIndex, glpk.LO, 0, 0)
-				lp.SetMatRow(baseIndex, []int32{-1, m1Index, quadraticIndex}, []float64{0, 1, -1})
+				lp.SetMatRow(baseIndex, []int32{-1, int32(m1Index), int32(quadraticIndex)}, []float64{0, 1, -1})
 
-				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 1 on z%d%d%d", time, m1, m2))
-				lp.SetRowBnds(baseIndex, glpk.LO, 0, 0)
-				lp.SetMatRow(baseIndex, []int32{-1, m2Index, quadraticIndex}, []float64{0, 1, -1})
+				lp.SetRowName(baseIndex + 1, fmt.Sprintf("constraint 1 on z%d%d%d", time, m1, m2))
+				lp.SetRowBnds(baseIndex + 1, glpk.LO, 0, 0)
+				lp.SetMatRow(baseIndex + 1, []int32{-1, int32(m2Index), int32(quadraticIndex)}, []float64{0, 1, -1})
 
-				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 2 on z%d%d%d", time, m1, m2))
-				lp.SetRowBnds(baseIndex, glpk.LO, -1, 0)
-				lp.SetMatRow(baseIndex, []int32{-1, m1Index, m2Index, quadraticIndex}, []float64{0, -1, -1, 1})
-				rangeIndexes = append(rangeIndexes, quadraticIndex)
+				lp.SetRowName(baseIndex + 2, fmt.Sprintf("constraint 2 on z%d%d%d", time, m1, m2))
+				lp.SetRowBnds(baseIndex + 2, glpk.LO, -1, 0)
+				lp.SetMatRow(baseIndex + 2, []int32{-1, int32(m1Index), int32(m2Index), int32(quadraticIndex)}, []float64{0, -1, -1, 1})
+				rangeIndexes = append(rangeIndexes, int32(quadraticIndex))
 				rangeValues = append(rangeValues, moon1.distanceTo(moon2, float64(time + 1)))
 			}
 		}
