@@ -181,6 +181,7 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) (tripCheckIndexes []int3
 		}
 	}
 	lp.SetRowName(c.getCapacityIndex(), "Capacity constraint")
+	lp.SetRowBnds(c.getCapacityIndex(), glpk.UP, 0, c.capacity)
 	lp.SetMatRow(c.getCapacityIndex(), capacityIndexes, capacityValues)
 	for time := 0; time < len(c.moons); time++ {
 		indexes := []int32{-1} // 0 index is ignored
