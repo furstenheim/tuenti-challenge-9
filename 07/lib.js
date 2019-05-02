@@ -25,10 +25,13 @@ function parseInput (input) {
   for (let i = 0; i < nMessages; i++) {
     const c = parseCase(input)
     const solution = solveCase(c)
-    console.log(solution.map(c => c.toString()))
+    printSolution(solution, i)
   }
 }
 
+function printSolution (solution, i) {
+  console.log(`Case #${i + 1}: ${solution}`)
+}
 
 function solveCase (c) {
   const splitOriginal = splitMessage(c.original)

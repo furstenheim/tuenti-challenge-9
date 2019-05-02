@@ -79,7 +79,7 @@ describe('findMinimumInterstitialLength', function () {
   })
 })
 
-describe.only('solveCase', function () {
+describe('solveCase', function () {
   const tests = [{
     original: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Not Penny's boat`),
     copy: Buffer.from(`Subject: Boat;From: Charlie;To: Desmond;------Penny's boat :)`),
