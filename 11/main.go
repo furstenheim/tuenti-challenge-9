@@ -183,8 +183,42 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
 	}
 }
 
+func (c * Case) setUpQuadraticTerms (lp *glpk.Prob) {
+	for time := 0; time < len(c.moons) -1; time++ {
+		for m1:= 0; m1 < len(c.moons); m1++ {
+			for m2:= 0; m2 < len(c.moons); m2++ {
+				if m1 == m2 {
+					continue
+				}
+				quadraticIndex := c.getQuadraticTermIndex(time, m1, m2)
+				m1Index := c.getTimeMoonIndex(time, m1)
+				m2Index := c.getTimeMoonIndex(time, m2)
+				lp.SetColName(quadraticIndex, fmt.Sprintf("Term z%d%d%d", time, m1, m2))
+				lp.SetColBnds(quadraticIndex, glpk.LO, 0, 0)
+				baseIndex := c.getBaseQuadraticConditionIndex(time, m1, m2)
+
+				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 0 on z%d%d%d", time, m1, m2))
+				lp.SetRowBnds(baseIndex, glpk.LO, 0, 0)
+				lp.SetMatRow(baseIndex, []int32{-1, m1Index, quadraticIndex}, []float64{0, 1, -1})
+
+				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 1 on z%d%d%d", time, m1, m2))
+				lp.SetRowBnds(baseIndex, glpk.LO, 0, 0)
+				lp.SetMatRow(baseIndex, []int32{-1, m2Index, quadraticIndex}, []float64{0, 1, -1})
+
+				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 2 on z%d%d%d", time, m1, m2))
+				lp.SetRowBnds(baseIndex, glpk.LO, -1, 0)
+				lp.SetMatRow(baseIndex, []int32{-1, m1Index, m2Index, quadraticIndex}, []float64{0, -1, -1, 1})
+			}
+		}
+	}
+}
+
 func (c * Case) getTimeMoonIndex(time, moon int) int {
 	return 1 + len(c.moons) * time + moon
+}
+
+func (c * Case) getQuadraticTermIndex (time, m1, m2 int) int {
+	return 1 + len(c.moons) * len(c.moons) + time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
 }
 
 func (c *Case) getSameMoonConditionIndex (moon int) int {
@@ -192,6 +226,9 @@ func (c *Case) getSameMoonConditionIndex (moon int) int {
 }
 func (c * Case) getSameTimeConditionIndex (time int) int {
 	return 1 + len(c.moons) + time
+}
+func (c * Case) getBaseQuadraticConditionIndex (time, m1, m2 int) int {
+	return 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
 }
 
 func (m1 Moon) distanceTo (m2 Moon, t float64) float64 {
