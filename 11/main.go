@@ -130,6 +130,11 @@ func (c *Case) solve () Solution {
 	found := true
 
 	if err := lp.Intopt(iocp); err != nil {
+		if fmt.Sprintf("%v", err) == "no primal feasible solution" {
+			return Solution{
+				found: false,
+			}
+		}
 		log.Fatalf("Mip error: %v", err)
 	}
 
