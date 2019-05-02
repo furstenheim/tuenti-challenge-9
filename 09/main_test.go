@@ -142,6 +142,27 @@ func TestFindAllPossibleCombinations (t *testing.T) {
 	testCases := []struct{
 		expected []int
 		confused ConfusedNumber
+	}{
+		{
+			confused: ConfusedNumber{
+				powersOfTen: []PowerOfTen{powersOfTenByRune['十']},
+				digits: []int{},
+				allowFirstDigit: false,
+			},
+			expected: []int{10},
+
+		},
+
+	}
+	for _, tc := range(testCases) {
+		expected := tc.confused.findAllPossibleNumbers()
+		assert.Equal(t, tc.expected, expected)
+	}
+}
+func TestFindAllPossibleCombinationsPermutations (t *testing.T) {
+	testCases := []struct{
+		expected []int
+		confused ConfusedNumber
 		digits []int
 	}{
 		{
@@ -249,6 +270,19 @@ func TestSolve (t *testing.T) {
 				op1: KanjiNumber{'二', '百', '五', '十'},
 				op2: KanjiNumber{'六', '十', '五'},
 				result: KanjiNumber{'一', '万', '六', '千', '二', '百', '五', '十'},
+			},
+		},
+		{
+			expected: Solution{
+				n1: 89,
+				n2: 10,
+				operator: "+",
+				result: 99,
+			},
+			c: Case{
+				op1: KanjiNumber{'十', '八', '九'},
+				op2: KanjiNumber{'十'},
+				result: KanjiNumber{'九', '九', '十'},
 			},
 		},
 	}

@@ -208,6 +208,7 @@ func (c Case) solve () Solution {
 
 		}
 	}
+	log.Println(possibleNumbers2, c2)
 	log.Fatal("Solution not possible", string(c.op1), ' ', string(c.op2), ' ', string(c.result))
 	return Solution{}
 }
@@ -246,6 +247,9 @@ func (n KanjiNumber) toFrequencymap () FrequencyMap {
 func (c ConfusedNumber) findAllPossibleNumbers () []int {
 	digitsPermutations := permutations(c.digits)
 	result := []int{}
+	if len(digitsPermutations) == 0 {
+		result = c.findAllPossibleNumbersForPermutation([]int{})
+	}
 	for _, digits := range(digitsPermutations) {
 		result = append(result, c.findAllPossibleNumbersForPermutation(digits)...)
 	}
