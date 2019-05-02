@@ -10,7 +10,8 @@ type Case struct {
 }
 
 type Solution struct {
-
+	operator string
+	n1, n2, result int
 }
 
 type KanjiNumber []rune
@@ -29,6 +30,30 @@ type ConfusedNumber struct {
 	allowFirstDigit bool
 	powersOfTen []PowerOfTen
 	digits 	    []int
+}
+
+type Operation struct {
+	symbol string
+	operation func (i, j int) int
+}
+
+var operations = []Operation{
+	{
+		symbol: "+",
+		operation: func (i, j int) int {
+			return i + j
+		},
+	},{
+		symbol: "-",
+		operation: func (i, j int) int {
+			return i - j
+		},
+	},{
+		symbol: "+",
+		operation: func (i, j int) int {
+			return i * j
+		},
+	},
 }
 const MAX_NUMBER = 99999
 const MIN_NUMBER = 1
@@ -106,6 +131,37 @@ func toRawNumber (n int) KanjiNumber {
 */
 
 
+
+func (c Case) solve () Solution {
+	c1 := c.op1.toConfusedNumber()
+	c2 := c.op2.toConfusedNumber()
+	fm := c.result.toFrequencymap()
+	possibleNumbers1 := c1.findAllPossibleNumbers()
+	possibleNumbers2 := c2.findAllPossibleNumbers()
+	for _, p1 := range(possibleNumbers1) {
+		for _, p2 := range(possibleNumbers2) {
+			for _, op := range(operations) {
+				possibleResult := op.operation(p1, p2)
+				if possibleResult <= MAX_NUMBER && possibleResult >= MIN_NUMBER {
+					possibleKanji := intToKanji(possibleResult)
+					isPossible := fm.isKanjiPossible(possibleKanji)
+					if isPossible {
+						return Solution{
+							operator: op.symbol,
+							n1: p1,
+							n2: p2,
+							result: possibleResult,
+						}
+					}
+				}
+			}
+
+		}
+	}
+	log.Fatal("Solution not possible")
+	return Solution{}
+}
+
 func (n KanjiNumber) toConfusedNumber () ConfusedNumber {
 	allowFirstDigit := false
 	confusedPowers := []PowerOfTen{}
@@ -126,6 +182,24 @@ func (n KanjiNumber) toConfusedNumber () ConfusedNumber {
 		powersOfTen: confusedPowers,
 		digits: digits,
 	}
+}
+
+func (n KanjiNumber) toFrequencymap () FrequencyMap {
+	fm := map[rune]int{}
+	for _, k := range(n) {
+		fm[k]++
+	}
+	return fm
+}
+
+
+func (c ConfusedNumber) findAllPossibleNumbers () []int {
+	digitsPermutations := permutations(c.digits)
+	result := []int{}
+	for _, digits := range(digitsPermutations) {
+		result = append(result, c.findAllPossibleNumbersForPermutation(digits)...)
+	}
+	return result
 }
 
 func (c ConfusedNumber) findAllPossibleNumbersForPermutation (digits []int) []int {

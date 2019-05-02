@@ -219,6 +219,32 @@ func TestFindAllPossibleCombinations (t *testing.T) {
 		assert.Equal(t, tc.expected, expected)
 	}
 }
+func TestSolve (t *testing.T) {
+	testCases := []struct{
+		expected Solution
+		c Case
+	}{
+		{
+			expected: Solution{
+				n1: 2017,
+				n2: 223,
+				operator: "+",
+				result: 2240,
+			},
+			c: Case{
+				op1: KanjiNumber{'七', '十', '二', '千'},
+				op2: KanjiNumber{'二', '三', '百', '十', '二'},
+				result: KanjiNumber{'四', '二', '千', '百', '十', '二'},
+			},
+
+
+		},
+	}
+	for _, tc := range(testCases) {
+		expected := tc.c.solve()
+		assert.Equal(t, tc.expected, expected)
+	}
+}
 func TestPermutations (t *testing.T) {
 	testCases := []struct{
 		original []int
