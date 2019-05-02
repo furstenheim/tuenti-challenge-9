@@ -136,6 +136,64 @@ type Moon struct {
 	periodHours float64
 }
 
+type Case struct {
+	moons []Moon
+	capacity float64
+	shipRange float64
+}
+
+func (c *Case) solve () {
+	lp := glpk.New()
+	lp.SetProbName("sample")
+	lp.SetObjName("Z")
+	lp.SetObjDir(glpk.MAX)
+	c.addTimeMoonConstraints(lp)
+
+}
+
+func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
+	for time := 0; time < len(c.moons); time++ {
+		for moon := 0; moon < len(c.moons); moon++ {
+			lp.SetColName(c.getTimeMoonIndex(time, moon), fmt.Sprintf("Spaceshift at time %d at moon %d", time, moon))
+			lp.SetColKind(c.getTimeMoonIndex(time, moon), glpk.IV)
+			lp.SetColBnds(c.getTimeMoonIndex(time, moon), glpk.DB, 0, 1)
+		}
+	}
+	for time := 0; time < len(c.moons); time++ {
+		indexes := []int{-1} // 0 index is ignored
+		matrixValues := []int{-1}
+		for moon := 0; moon < len(c.moons); moon++ {
+			indexes = append(indexes, c.getTimeMoonIndex(time, moon))
+			matrixValues = append(matrixValues, 1)
+		}
+		lp.SetRowName(c.getSameTimeConditionIndex(time), fmt.Sprintf("Spaceshift at time %d in only one moon", time))
+		lp.SetRowBnds(c.getSameTimeConditionIndex(time), glpk.UP, 0, 1)
+		lp.SetMatRow(c.getSameTimeConditionIndex(time), indexes, matrixValues)
+	}
+	for moon := 0; moon < len(c.moons); moon++ {
+		indexes := []int{-1} // 0 index is ignored
+		matrixValues := []int{-1}
+		for time := 0; time < len(c.moons); time++ {
+			indexes = append(indexes, c.getTimeMoonIndex(time, moon))
+			matrixValues = append(matrixValues, 1)
+		}
+		lp.SetRowName(c.getSameMoonConditionIndex(moon), fmt.Sprintf("Spaceshift at moon %d in only one time", moon))
+		lp.SetRowBnds(c.getSameMoonConditionIndex(moon), glpk.UP, 0, 1)
+		lp.SetMatRow(c.getSameMoonConditionIndex(moon), indexes, matrixValues)
+	}
+}
+
+func (c * Case) getTimeMoonIndex(time, moon int) int {
+	return 1 + len(c.moons) * time + moon
+}
+
+func (c *Case) getSameMoonConditionIndex (moon int) int {
+	return 1 + moon
+}
+func (c * Case) getSameTimeConditionIndex (time int) int {
+	return 1 + len(c.moons) + time
+}
+
 func (m1 Moon) distanceTo (m2 Moon, t float64) float64 {
 	angleDiff := m1.currentAngle(t) - m2.currentAngle(t)
 	distance := m1.radius * m1.radius + m2.radius * m2.radius - 2 * m1.radius * m2.radius * math.Cos(angleDiff)
