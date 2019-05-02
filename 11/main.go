@@ -51,8 +51,8 @@ func (c *Case) solve () {
 	lp.SetObjDir(glpk.MAX)
 	lp.AddCols(c.getNCols())
 	lp.AddRows(c.getNRows())
-	c.addTimeMoonConstraints(lp)
-	c.setUpQuadraticTerms(lp)
+	tripCheckIndexes, tripCheckValues := c.addTimeMoonConstraints(lp)
+	c.setUpQuadraticTerms(lp, tripCheckIndexes, tripCheckValues)
 
 	iocp := glpk.NewIocp()
 	iocp.SetPresolve(true)
@@ -69,9 +69,11 @@ func (c *Case) solve () {
 	lp.Delete()
 }
 
-func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
+func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) (tripCheckIndexes []int32, tripCheckValues[]float64){
 	capacityIndexes := []int32{-1}
 	capacityValues := []float64{-1}
+	tripCheckIndexes = []int32{-1}
+	tripCheckValues = []float64{-1}
 	lp.SetObjName("Load")
 	lp.SetObjDir(glpk.MAX)
 	for time := 0; time < len(c.moons); time++ {
@@ -82,6 +84,8 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
 			lp.SetObjCoef(c.getTimeMoonIndex(time, moon), moonObj.load)
 			capacityIndexes = append(capacityIndexes, int32(c.getTimeMoonIndex(time, moon)))
 			capacityValues = append(capacityValues, moonObj.load)
+			tripCheckIndexes = append(tripCheckIndexes, int32(c.getTimeMoonIndex(time, moon)))
+			tripCheckValues = append(tripCheckValues, 1)
 		}
 	}
 	lp.SetMatRow(c.getCapacityIndex(), capacityIndexes, capacityValues)
@@ -107,9 +111,10 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
 		lp.SetRowBnds(c.getSameMoonConditionIndex(moon), glpk.UP, 0, 1)
 		lp.SetMatRow(c.getSameMoonConditionIndex(moon), indexes, matrixValues)
 	}
+	return
 }
 
-func (c * Case) setUpQuadraticTerms (lp *glpk.Prob) {
+func (c * Case) setUpQuadraticTerms (lp *glpk.Prob, tripCheckIndexes []int32, tripCheckValues[]float64) {
 	rangeIndexes := []int32{-1}
 	rangeValues := []float64{-1}
 	for time := 0; time < len(c.moons) -1; time++ {
@@ -138,12 +143,19 @@ func (c * Case) setUpQuadraticTerms (lp *glpk.Prob) {
 				lp.SetMatRow(baseIndex + 2, []int32{-1, int32(m1Index), int32(m2Index), int32(quadraticIndex)}, []float64{0, -1, -1, 1})
 				rangeIndexes = append(rangeIndexes, int32(quadraticIndex))
 				rangeValues = append(rangeValues, moon1.distanceTo(moon2, float64(time + 1)))
+
+				tripCheckIndexes = append(tripCheckIndexes, int32(quadraticIndex))
+				tripCheckValues = append(tripCheckValues, -1)
 			}
 		}
 	}
 	lp.SetRowName(c.getRangeIndex(), "Range is not overdone")
 	lp.SetRowBnds(c.getRangeIndex(), glpk.UP, 0, c.shipRange)
 	lp.SetMatRow(c.getRangeIndex(), rangeIndexes, rangeValues)
+
+	lp.SetRowName(c.getCheckIndex(), "Check that quadratic terms add up to the planets")
+	lp.SetRowBnds(c.getCheckIndex(), glpk.FX, 1, 1)
+	lp.SetMatRow(c.getCheckIndex(), tripCheckIndexes, tripCheckValues)
 }
 
 func (c * Case) getTimeMoonIndex(time, moon int) int {
@@ -159,13 +171,13 @@ func (c * Case) getNCols () int {
 }
 
 func (c *Case) getSameMoonConditionIndex (moon int) int {
-	return 2 + 1 + moon
+	return 3 + 1 + moon
 }
 func (c * Case) getSameTimeConditionIndex (time int) int {
-	return 2+ 1 + len(c.moons) + time
+	return 3+ 1 + len(c.moons) + time
 }
 func (c * Case) getBaseQuadraticConditionIndex (time, m1, m2 int) int {
-	return 2 + 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
+	return 3 + 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
 }
 
 func (c * Case) getRangeIndex () int {
@@ -175,8 +187,12 @@ func (c * Case) getCapacityIndex () int {
 	return 2
 }
 
+func (c * Case) getCheckIndex () int {
+	return 3
+}
+
 func (c * Case) getNRows () int {
-	return 2 + 1 + len(c.moons) + len(c.moons) + 3 * len(c.moons) * len(c.moons) * len(c.moons)
+	return 3 + 1 + len(c.moons) + len(c.moons) + 3 * len(c.moons) * len(c.moons) * len(c.moons)
 }
 
 
