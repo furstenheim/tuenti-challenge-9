@@ -72,8 +72,8 @@ type Moon struct {
 
 func (m1 Moon) distanceTo (m2 Moon, t float64) float64 {
 	angleDiff := m1.currentAngle(t) - m2.currentAngle(t)
-	distance := m1.radius * m1.radius + m2.radius * m2.radius - m1.radius * m2.radius * math.Cos(angleDiff)
-	return distance
+	distance := m1.radius * m1.radius + m2.radius * m2.radius - 2 * m1.radius * m2.radius * math.Cos(angleDiff)
+	return math.Sqrt(distance)
 }
 
 func (m1 Moon) currentAngle (t float64) float64 {
