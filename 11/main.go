@@ -21,7 +21,8 @@ func main () {
 		log.Fatal(err)
 	}
 	for i := 0; i < numberOfCases; i ++ {
-		log.Println(i)
+		fmt.Println(i)
+		// log.Println(i)
 		c := parseCase(reader)
 		s := c.solve()
 		s.printResult(i)
@@ -91,7 +92,7 @@ func (s *Solution) printResult (i int) {
 	} else {
 		text = fmt.Sprintf("Case #%d: None", i + 1)
 	}
-	fmt.Println(text)
+	fmt.Fprintln(os.Stderr, text)
 }
 type Moon struct {
 	load        float64
@@ -132,7 +133,7 @@ func (c *Case) solve () Solution {
 		log.Fatalf("Mip error: %v", err)
 	}
 
-	fmt.Printf("%s = %g", lp.ObjName(), lp.MipObjVal())
+	/*fmt.Printf("%s = %g", lp.ObjName(), lp.MipObjVal())*/
 	loads := []int{}
 	for time := 0; time < len(c.moons); time++ {
 		for moon, _ := range(c.moons) {
@@ -142,7 +143,7 @@ func (c *Case) solve () Solution {
 			}
 		}
 	}
-	for i := 0; i < c.getNCols(); i++ {
+/*	for i := 0; i < c.getNCols(); i++ {
 		fmt.Printf("; %s = %g for variable %d", lp.ColName(i+1), lp.MipColVal(i+1), i + 1)
 		fmt.Println()
 	}
@@ -150,7 +151,7 @@ func (c *Case) solve () Solution {
 		a, b := lp.MatRow(j + 1)
 		log.Println(lp.RowName(j +1 ), lp.RowLB(j + 1), a, b, lp.RowUB(j + 1), lp.RowType(j + 1), glpk.LO)
 	}
-	fmt.Println()
+	fmt.Println()*/
 	lp.Delete()
 	sort.Slice(loads, func (i, j int) bool {
 		return loads[i] < loads[j]
