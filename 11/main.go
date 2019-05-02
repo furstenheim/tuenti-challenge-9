@@ -148,17 +148,26 @@ func (c *Case) solve () {
 	lp.SetObjName("Z")
 	lp.SetObjDir(glpk.MAX)
 	c.addTimeMoonConstraints(lp)
+	c.setUpQuadraticTerms(lp)
 
 }
 
 func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
+	capacityIndexes := []int32{-1}
+	capacityValues := []float64{-1}
+	lp.SetObjName("Load")
+	lp.SetObjDir(glpk.MAX)
 	for time := 0; time < len(c.moons); time++ {
-		for moon := 0; moon < len(c.moons); moon++ {
+		for moon, moonObj := range(c.moons) {
 			lp.SetColName(c.getTimeMoonIndex(time, moon), fmt.Sprintf("Spaceshift at time %d at moon %d", time, moon))
 			lp.SetColKind(c.getTimeMoonIndex(time, moon), glpk.IV)
 			lp.SetColBnds(c.getTimeMoonIndex(time, moon), glpk.DB, 0, 1)
+			lp.SetObjCoef(c.getTimeMoonIndex(time, moon), moonObj.load)
+			capacityIndexes = append(capacityIndexes, c.getTimeMoonIndex(time, moon))
+			capacityValues = append(capacityValues, moonObj.load)
 		}
 	}
+	lp.SetMatRow(c.getCapacityIndex(), capacityIndexes, capacityValues)
 	for time := 0; time < len(c.moons); time++ {
 		indexes := []int{-1} // 0 index is ignored
 		matrixValues := []int{-1}
@@ -184,9 +193,11 @@ func (c * Case) addTimeMoonConstraints (lp * glpk.Prob) {
 }
 
 func (c * Case) setUpQuadraticTerms (lp *glpk.Prob) {
+	rangeIndexes := []int32{-1}
+	rangeValues := []float64{-1}
 	for time := 0; time < len(c.moons) -1; time++ {
-		for m1:= 0; m1 < len(c.moons); m1++ {
-			for m2:= 0; m2 < len(c.moons); m2++ {
+		for m1, moon1 := range(c.moons) {
+			for m2, moon2 := range(c.moons) {
 				if m1 == m2 {
 					continue
 				}
@@ -208,9 +219,14 @@ func (c * Case) setUpQuadraticTerms (lp *glpk.Prob) {
 				lp.SetRowName(baseIndex, fmt.Sprintf("constraint 2 on z%d%d%d", time, m1, m2))
 				lp.SetRowBnds(baseIndex, glpk.LO, -1, 0)
 				lp.SetMatRow(baseIndex, []int32{-1, m1Index, m2Index, quadraticIndex}, []float64{0, -1, -1, 1})
+				rangeIndexes = append(rangeIndexes, quadraticIndex)
+				rangeValues = append(rangeValues, moon1.distanceTo(moon2, float64(time + 1)))
 			}
 		}
 	}
+	lp.SetRowName(c.getRangeIndex(), "Range is not overdone")
+	lp.SetRowBnds(c.getRangeIndex(), glpk.UP, 0, c.shipRange)
+	lp.SetMatRow(c.getRangeIndex(), rangeIndexes, rangeValues)
 }
 
 func (c * Case) getTimeMoonIndex(time, moon int) int {
@@ -222,13 +238,20 @@ func (c * Case) getQuadraticTermIndex (time, m1, m2 int) int {
 }
 
 func (c *Case) getSameMoonConditionIndex (moon int) int {
-	return 1 + moon
+	return 2 + 1 + moon
 }
 func (c * Case) getSameTimeConditionIndex (time int) int {
-	return 1 + len(c.moons) + time
+	return 2+ 1 + len(c.moons) + time
 }
 func (c * Case) getBaseQuadraticConditionIndex (time, m1, m2 int) int {
-	return 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
+	return 2 + 1 + len(c.moons) + len(c.moons) +  3 * time * len(c.moons) * len(c.moons) + m1 * len(c.moons) + m2
+}
+
+func (c * Case) getRangeIndex () int {
+	return 1
+}
+func (c * Case) getCapacityIndex () int {
+	return 2
 }
 
 func (m1 Moon) distanceTo (m2 Moon, t float64) float64 {
