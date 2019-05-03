@@ -39,25 +39,11 @@ func parseAlmanac () Almanac {
 	sort.Slice(a.rawCombinations, func (i, j int) bool {
 		return a.almanacCharacters[a.rawCombinations[i].result].level < a.almanacCharacters[a.rawCombinations[j].result].level
 	})
-	count := 0
-	for i, c := range(a.rawCombinations) {
-		cts1 := a.expandedCharacter[c.char1].characterTypes
-		cts2 := a.expandedCharacter[c.char2].characterTypes
-		cts3 := a.expandedCharacter[c.result].characterTypes
-		originalSkills := a.almanacCharacters[c.result].skills
-		for _, ct1 := range (cts1) {
-			for _, ct2 := range(cts2) {
-				count++
-				if count > 100000000 {
-					log.Fatal(i, len(cts1), len(cts2), c.char1, c.char2)
-				}
-				cts3 = append(cts3, CharacterType{
-					gold: ct1.gold + ct2.gold,
-					skills: originalSkills.Combine(ct1.skills, ct2.skills),
-				})
-			}
-		}
-		a.expandedCharacter[c.result].characterTypes = cts3
+	for _, c := range(a.rawCombinations) {
+		s1 := a.almanacCharacters[c.char1].skills
+		s2 := a.almanacCharacters[c.char2].skills
+		s3 := a.almanacCharacters[c.result].skills
+		a.almanacCharacters[c.result].expandedSkills = s3.Combine(s1, s2)
 	}
 
 	return a
@@ -110,19 +96,11 @@ func (a *Almanac) parseCharacter (reader *bufio.Reader) {
 	c := AlmanacCharacter{
 		id: id,
 		skills: skillsMask,
+		expandedSkills: skillsMask,
 		gold: gold,
 		level: level,
 	}
 	a.almanacCharacters[id] = c
-	a.expandedCharacter[id] = ExpandedCharacter{
-		id: id,
-		characterTypes: []CharacterType{
-			CharacterType{
-				gold: gold,
-				skills: skillsMask,
-			},
-		},
-	}
 }
 
 
@@ -166,6 +144,7 @@ type ExpandedCharacter struct {
 type AlmanacCharacter struct {
 	id CharacterId
 	skills SkillMask
+	expandedSkills SkillMask
 	gold int
 	level int
 }
@@ -177,7 +156,6 @@ type Almanac struct {
 	skills [256]Skill
 	almanacCharactersMap map[string]CharacterId
 	almanacCharacters [256]AlmanacCharacter
-	expandedCharacter [256]ExpandedCharacter
 	rawCombinations []RawCombination
 }
 

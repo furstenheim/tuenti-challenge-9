@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"log"
 )
 
 func TestSkillMask (t * testing.T) {
@@ -48,4 +49,5 @@ func TestParseAlmanac (t *testing.T) {
 	assert.Equal(t,
 		a.almanacCharacters[a.almanacCharactersMap["character2"]].skills,
 		SkillMask{(1 << a.skills[a.skillsMap["skill75"]].id) | ( 1 << a.skills[a.skillsMap["wind"]].id), 0})
+	log.Println(a.almanacCharacters[a.almanacCharactersMap["ifrit"]])
 }
