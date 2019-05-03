@@ -189,6 +189,7 @@ func (c *Case) bestBranch (position Position, vs VisitState) (found bool, capaci
 			vs2 := VisitState{
 				remainingRange: vs.remainingRange - currentMoon.distanceTo(m, nextTime),
 				remainingCapacity: vs.remainingCapacity - currentMoon.load,
+				time: nextTime,
 			}
 			position2 := Position{
 				currentMoonIndex: i,
