@@ -9,6 +9,7 @@ import (
 )
 
 
+
 func parseAlmanac () Almanac {
 	f, err := os.Open("./almanac.data")
 	handleError(err)
@@ -20,20 +21,39 @@ func parseAlmanac () Almanac {
 	nCombinations, err := strconv.Atoi(strings.Fields(line)[1])
 	handleError(err)
 	a := Almanac{
+		currentSkillId: 1,
+		currentCharacterId: 1,
 		skillsMap: map[string]SkillId{},
 		almanacCharactersMap: map[string]CharacterId{},
+		rawCombinations: []RawCombination{},
 	}
 
 	for i := 0; i < nCharacters; i++ {
 		a.parseCharacter(reader)
 	}
-
-
+	for i := 0; i< nCombinations; i++ {
+		a.parseCombination(reader)
+	}
+	return a
 }
 
 
 func (a *Almanac) parseCombination (reader * bufio.Reader) {
-	
+	line, err := reader.ReadString('\n')
+	handleError(err)
+	fields := strings.Fields(line)
+	c0, ok0 := a.almanacCharactersMap[fields[0]]
+	c1, ok1 := a.almanacCharactersMap[fields[1]]
+	c2, ok2 := a.almanacCharactersMap[fields[2]]
+	if !(ok0 && ok1 && ok2) {
+		log.Fatal("Unkonwn characters", c0, c1, c2)
+	}
+
+	a.rawCombinations = append(a.rawCombinations, RawCombination{
+		result: c0,
+		char1: c1,
+		char2: c2,
+	})
 }
 
 
@@ -96,6 +116,9 @@ type Skill struct {
 	name string
 }
 
+type RawCombination struct {
+	result, char1, char2 CharacterId
+}
 type AlmanacCharacter struct {
 	id CharacterId
 	skills SkillMask
@@ -110,6 +133,7 @@ type Almanac struct {
 	skills [256]Skill
 	almanacCharactersMap map[string]CharacterId
 	almanacCharacters [256]AlmanacCharacter
+	rawCombinations []RawCombination
 }
 
 // There are 100 skills

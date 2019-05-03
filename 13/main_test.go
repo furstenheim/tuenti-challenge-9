@@ -41,3 +41,11 @@ func TestSkillMask (t * testing.T) {
 		assert.Equal(t, tc.expected, tc.sm)
 	}
 }
+
+func TestParseAlmanac (t *testing.T) {
+	a := parseAlmanac()
+	assert.Equal(t, 1, a.almanacCharacters[a.almanacCharactersMap["shiva"]].level)
+	assert.Equal(t,
+		a.almanacCharacters[a.almanacCharactersMap["character2"]].skills,
+		SkillMask{(1 << a.skills[a.skillsMap["skill75"]].id) | ( 1 << a.skills[a.skillsMap["wind"]].id), 0})
+}
