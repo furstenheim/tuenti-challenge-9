@@ -6,6 +6,7 @@ import (
 	"strings"
 	"strconv"
 	"os"
+	"sort"
 )
 
 
@@ -34,6 +35,31 @@ func parseAlmanac () Almanac {
 	for i := 0; i< nCombinations; i++ {
 		a.parseCombination(reader)
 	}
+
+	sort.Slice(a.rawCombinations, func (i, j int) bool {
+		return a.almanacCharacters[a.rawCombinations[i].result].level < a.almanacCharacters[a.rawCombinations[j].result].level
+	})
+	count := 0
+	for i, c := range(a.rawCombinations) {
+		cts1 := a.expandedCharacter[c.char1].characterTypes
+		cts2 := a.expandedCharacter[c.char2].characterTypes
+		cts3 := a.expandedCharacter[c.result].characterTypes
+		originalSkills := a.almanacCharacters[c.result].skills
+		for _, ct1 := range (cts1) {
+			for _, ct2 := range(cts2) {
+				count++
+				if count > 100000000 {
+					log.Fatal(i, len(cts1), len(cts2), c.char1, c.char2)
+				}
+				cts3 = append(cts3, CharacterType{
+					gold: ct1.gold + ct2.gold,
+					skills: originalSkills.Combine(ct1.skills, ct2.skills),
+				})
+			}
+		}
+		a.expandedCharacter[c.result].characterTypes = cts3
+	}
+
 	return a
 }
 
@@ -88,6 +114,15 @@ func (a *Almanac) parseCharacter (reader *bufio.Reader) {
 		level: level,
 	}
 	a.almanacCharacters[id] = c
+	a.expandedCharacter[id] = ExpandedCharacter{
+		id: id,
+		characterTypes: []CharacterType{
+			CharacterType{
+				gold: gold,
+				skills: skillsMask,
+			},
+		},
+	}
 }
 
 
@@ -119,6 +154,15 @@ type Skill struct {
 type RawCombination struct {
 	result, char1, char2 CharacterId
 }
+
+type CharacterType struct {
+	gold int
+	skills SkillMask
+}
+type ExpandedCharacter struct {
+	id CharacterId
+	characterTypes []CharacterType
+}
 type AlmanacCharacter struct {
 	id CharacterId
 	skills SkillMask
@@ -133,6 +177,7 @@ type Almanac struct {
 	skills [256]Skill
 	almanacCharactersMap map[string]CharacterId
 	almanacCharacters [256]AlmanacCharacter
+	expandedCharacter [256]ExpandedCharacter
 	rawCombinations []RawCombination
 }
 
@@ -145,6 +190,12 @@ func (sm * SkillMask) addSkill (id SkillId) {
 	} else {
 		sm[1] = sm[1] | (1 << (id - 64))
 	}
+}
+
+func (sm SkillMask) Combine (sm1, sm2 SkillMask) (combination SkillMask) {
+	combination[0] = sm[0] | sm1[0] | sm2[0]
+	combination[1] = sm[1] | sm1[1] | sm2[1]
+	return
 }
 
 
