@@ -2,9 +2,13 @@ package main
 
 import (
 	"log"
+	"bufio"
+	"strings"
+	"strconv"
+	"os"
 )
 
-/*
+
 func parseAlmanac () Almanac {
 	f, err := os.Open("./almanac.data")
 	handleError(err)
@@ -26,32 +30,61 @@ func parseAlmanac () Almanac {
 
 
 }
-*/
 
-/*
+
+func (a *Almanac) parseCombination (reader * bufio.Reader) {
+	
+}
+
+
 func (a *Almanac) parseCharacter (reader *bufio.Reader) {
 	line, err := reader.ReadString('\n')
 	handleError(err)
-	id := a.getNextCharacterId()
 	fields := strings.Fields(line)
 	name := fields[0]
-	a.almanacCharactersMap[name] = id
+	id := a.getNextCharacterId(name)
 	level, err := strconv.Atoi(fields[1])
 	handleError(err)
 	gold, err := strconv.Atoi(fields[2])
 	handleError(err)
 	nSkills, err := strconv.Atoi(fields[3])
 	handleError(err)
+	skillsMask := SkillMask{}
+
+	for i := 0; i< nSkills; i++ {
+		skill := fields[i + 4]
+		var id SkillId
+		if skillId, ok := a.skillsMap[skill]; ok {
+			id = skillId
+		} else {
+			id = a.registerSkill(skill)
+		}
+		skillsMask.addSkill(id)
+	}
 	c := AlmanacCharacter{
 		id: id,
+		skills: skillsMask,
+		gold: gold,
+		level: level,
 	}
-
+	a.almanacCharacters[id] = c
 }
-*/
 
-func (a * Almanac) getNextCharacterId () CharacterId {
+
+func (a * Almanac) getNextCharacterId (name string) CharacterId {
 	id := a.currentCharacterId
 	a.currentCharacterId++
+	a.almanacCharactersMap[name] = id
+	return id
+}
+func (a * Almanac) registerSkill( skill string) SkillId {
+	id := a.currentSkillId
+	a.skillsMap[skill] = id
+	a.skills[id] = Skill{
+		id: id,
+		name: skill,
+	}
+	a.currentSkillId++
 	return id
 }
 
