@@ -7,8 +7,72 @@ import (
 	"strconv"
 	"os"
 	"sort"
+	"golang.org/x/tools/go/ssa"
+	"fmt"
 )
 
+
+func main () {
+	reader := bufio.NewReader(os.Stdin)
+	line, _ := reader.ReadString('\n')
+	firstLineFields := strings.Fields(line)
+	a := parseAlmanac()
+	numberOfCases, err := strconv.Atoi(firstLineFields[0])
+	if (err != nil) {
+		log.Fatal(err)
+	}
+	for i := 0; i < numberOfCases; i ++ {
+		log.Println(i)
+		c := parseCase(reader, a)
+		s := c.solve(a)
+		s.printResult(i)
+	}
+}
+
+func parseCase (reader *bufio.Reader, a Almanac) Case {
+	line, err := reader.ReadString('\n')
+	handleError(err)
+	fields := strings.Fields(line)
+	gold, err := strconv.Atoi(fields[0])
+	handleError(err)
+	id := a.almanacCharactersMap[fields[1]]
+	nSkills, err := strconv.Atoi(fields[2])
+	handleError(err)
+	skills := SkillMask{}
+	for i := 0; i < nSkills; i++ {
+		skills.addSkill(a.skillsMap[fields[3 + i]])
+	}
+	return Case {
+		id: id,
+		gold: gold,
+		skills: skills,
+	}
+}
+
+type Case struct {
+	gold int
+	id CharacterId
+	skills SkillMask
+}
+
+type Solution struct {
+	found bool
+	gold int
+}
+
+func (s *Solution) printResult (i int) {
+	var text string
+	if !s.found {
+		text = fmt.Sprintf("Case #%d: None", i + 1)
+	} else {
+		text = fmt.Sprintf("Case #%d: %d", i + 1, s.gold)
+	}
+	fmt.Println(text)
+}
+
+func (c *Case) solve (a * Almanac) Solution {
+
+}
 
 
 func parseAlmanac () Almanac {
@@ -44,6 +108,7 @@ func parseAlmanac () Almanac {
 		s2 := a.almanacCharacters[c.char2].skills
 		s3 := a.almanacCharacters[c.result].skills
 		a.almanacCharacters[c.result].expandedSkills = s3.Combine(s1, s2)
+		a.almanacCharacters[c.result].combinations = append(a.almanacCharacters[c.result].combinations, c)
 	}
 
 	return a
@@ -98,6 +163,7 @@ func (a *Almanac) parseCharacter (reader *bufio.Reader) {
 		skills: skillsMask,
 		expandedSkills: skillsMask,
 		gold: gold,
+		combinations: []RawCombination{},
 		level: level,
 	}
 	a.almanacCharacters[id] = c
@@ -145,6 +211,7 @@ type AlmanacCharacter struct {
 	id CharacterId
 	skills SkillMask
 	expandedSkills SkillMask
+	combinations []RawCombination
 	gold int
 	level int
 }
