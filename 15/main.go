@@ -125,7 +125,6 @@ func (c * Case) solve () Solution {
 	distribution := c.partitionSum(lengths)
 
 
-	log.Println("Start of loop", freePeople, chains)
 	sittings := [8][]string{}
 	for i, _ := range(sittings) {
 		currentSittings := []string{}
@@ -135,29 +134,6 @@ func (c * Case) solve () Solution {
 			}
 		}
 		sittings[i] = currentSittings
-		/*
-
-		remainingSits := c.tableSize
-		for remainingSits > 0 {
-			found, nextChain, newChains := c.getBiggestChain(chains, remainingSits)
-			log.Println("Chain size", remainingSits, found, len(nextChain), len(chains), len(newChains))
-			if !found {
-				break
-			}
-			chains = newChains
-			remainingSits -= len(nextChain)
-			for _, p := range (nextChain) {
-				currentSittings = append(currentSittings, strconv.Itoa(int(p)))
-			}
-		}
-		for remainingSits > 0 {
-			var nextPerson PersonId
-			log.Println("free people", freePeople, remainingSits, sittings, chains)
-			nextPerson, freePeople = freePeople[len(freePeople) - 1], freePeople[:len(freePeople) - 1]
-			currentSittings = append(currentSittings, strconv.Itoa(int(nextPerson)))
-			remainingSits--
-		}
-		*/
 	}
 
 	return Solution{
@@ -170,6 +146,7 @@ func (c * Case) solve () Solution {
 type Visits [8 * 24]int
 type PartitionKey struct {
 	remainingSpace int
+	lastPosition [25]int
 	filling [8]int
 	visits Visits
 }
@@ -184,6 +161,7 @@ func (c * Case) partitionSum (lengths []int ) [8][]int {
 	for i, _ :=range(visits) {
 		visits[i] = - 1
 	}
+	log.Println(lengths)
 	el := c.partitionBranch(PartitionKey{
 		remainingSpace: c.tableSize * 8,
 		filling: [8]int{},
@@ -220,23 +198,30 @@ func (c * Case) partitionBranch (partitionStatus PartitionKey, lengths []int) Pa
 		if partitionStatus.visits[i] > -1 {
 			continue // already assigned
 		}
+		previousTableSize := -1
 		for table := 0; table < 8; table ++ {
+			tableSize := partitionStatus.filling[table]
+			if tableSize == previousTableSize {
+				continue
+			}
+			if table < partitionStatus.lastPosition[v] {
+				continue // Always iterate forward
+			}
+			previousTableSize = tableSize
 			if partitionStatus.filling[table] + v <= c.tableSize {
-				newVisits := cloneVisits(partitionStatus.visits)
-				newVisits[i] = table
-				newFillings := cloneFillings(partitionStatus.filling)
-				newFillings[table] = newFillings[table] + v
-				branchEl := c.partitionBranch(PartitionKey{
-					remainingSpace: partitionStatus.remainingSpace - v,
-					visits: newVisits,
-					filling: newFillings,
-				}, lengths)
+				newKey := clonePartitionStatus(partitionStatus)
+				newKey.visits[i] = table
+				newKey.filling[table] = newKey.filling[table] + v
+				newKey.remainingSpace = newKey.remainingSpace - v
+				newKey.lastPosition[v] = table
+				branchEl := c.partitionBranch(newKey, lengths)
 				if branchEl.found {
 					return branchEl
 				}
 
 			}
 		}
+		break // we do need to assign it
 
 	}
 	return PartitionEl{}
@@ -247,6 +232,10 @@ func cloneLengths (lengths []int) []int {
 	for i, v := range(lengths) {
 		clone[i] = v
 	}
+	return clone
+}
+func clonePartitionStatus (partitionStatus PartitionKey) PartitionKey {
+	clone := partitionStatus
 	return clone
 }
 func cloneVisits(distribution Visits) Visits {
