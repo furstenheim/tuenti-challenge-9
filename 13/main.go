@@ -72,11 +72,19 @@ func (s *Solution) printResult (i int) {
 
 
 func (c *Case) solve (a * Almanac) Solution {
+	a.cache = map[CacheKey]CacheItem{}
 	found, gold := a.branchSolve(c.gold, c.id, c.skills)
 	return Solution{found: found, gold: gold}
 }
 
 func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills SkillMask) (found bool, gold int) {
+	cacheKey := CacheKey{
+		skills: missingSkills,
+		id: id,
+	}
+	if cacheValue, ok := a.cache[cacheKey]; ok {
+		return cacheValue.found, cacheValue.gold
+	}
 	almanacCharacter := a.almanacCharacters[id]
 	remainingSkills := missingSkills.and(almanacCharacter.skills.neg())
 	currentBestGold := 200000 // Max in problem is 100000
@@ -115,6 +123,10 @@ func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills
 			}
 		}
 	}
+	a.cache[cacheKey] = CacheItem{
+		found: found,
+		gold: currentBestGold,
+	}
 	return found, currentBestGold
 }
 
@@ -136,6 +148,8 @@ func parseAlmanac () Almanac {
 		skillsMap: map[string]SkillId{},
 		almanacCharactersMap: map[string]CharacterId{},
 		rawCombinations: []RawCombination{},
+		cache: map[CacheKey]CacheItem{},
+
 	}
 
 	for i := 0; i < nCharacters; i++ {
@@ -263,6 +277,14 @@ type AlmanacCharacter struct {
 	level int
 }
 
+type CacheKey struct {
+	id CharacterId
+	skills SkillMask
+}
+type CacheItem struct {
+	found bool
+	gold int
+}
 type Almanac struct {
 	currentSkillId SkillId
 	currentCharacterId CharacterId
@@ -271,6 +293,7 @@ type Almanac struct {
 	almanacCharactersMap map[string]CharacterId
 	almanacCharacters [256]AlmanacCharacter
 	rawCombinations []RawCombination
+	cache map[CacheKey]CacheItem
 }
 
 // There are 100 skills
