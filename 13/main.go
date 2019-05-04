@@ -80,7 +80,7 @@ func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills
 	almanacCharacter := a.almanacCharacters[id]
 	remainingSkills := missingSkills.and(almanacCharacter.skills.neg())
 	currentBestGold := 200000 // Max in problem is 100000
-	// log.Println(remainingSkills, almanacCharacter, missingSkills)
+	// log.Println(remainingSkills, almanacCharacter, missingSkills, a.skills[2], a.skills[1], a.skills[0])
 	if remainingSkills.isZero() && almanacCharacter.gold <= remainingGold {
 		found = true
 		currentBestGold = almanacCharacter.gold
@@ -95,13 +95,13 @@ func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills
 		combinedMaxSkills := char1.expandedSkills.or(char2.expandedSkills)
 		// Combination might hold all necessary skills
 		if !combinedMaxSkills.neg().and(remainingSkills).isZero() {
-			// log.Println("Could not reach combination")
+			// log.Println("Could not reach combination", char1, char2, remainingSkills, combinedMaxSkills.neg().and(remainingSkills))
 			continue // cannot possibly reach with this combination
 		}
 		for _, comb := range (possibleCombinations) {
 			if !char1.expandedSkills.neg().and(comb[0]).isZero() ||
 				!char2.expandedSkills.neg().and(comb[1]).isZero() {
-			// 	log.Println("There was no sub combination")
+				// log.Println("There was no sub combination")
 				continue // This combination wouldn't work
 			}
 			branch1Found, branch1Gold := a.branchSolve(remainingGold, c1, comb[0])
@@ -149,9 +149,9 @@ func parseAlmanac () Almanac {
 		return a.almanacCharacters[a.rawCombinations[i].result].level < a.almanacCharacters[a.rawCombinations[j].result].level
 	})
 	for _, c := range(a.rawCombinations) {
-		s1 := a.almanacCharacters[c.char1].skills
-		s2 := a.almanacCharacters[c.char2].skills
-		s3 := a.almanacCharacters[c.result].skills
+		s1 := a.almanacCharacters[c.char1].expandedSkills
+		s2 := a.almanacCharacters[c.char2].expandedSkills
+		s3 := a.almanacCharacters[c.result].expandedSkills
 		a.almanacCharacters[c.result].expandedSkills = s3.Combine(s1, s2)
 		a.almanacCharacters[c.result].combinations = append(a.almanacCharacters[c.result].combinations, c)
 	}
