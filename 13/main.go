@@ -24,10 +24,8 @@ func main () {
 	for i := 0; i < numberOfCases; i ++ {
 		log.Println(i)
 		c := parseCase(reader, a)
-		_ = a
-		_ = c
-		//s := c.solve(a)
-		//s.printResult(i)
+		s := c.solve(&a)
+		s.printResult(i)
 	}
 }
 
@@ -65,27 +63,30 @@ type Solution struct {
 func (s *Solution) printResult (i int) {
 	var text string
 	if !s.found {
-		text = fmt.Sprintf("Case #%d: None", i + 1)
+		text = fmt.Sprintf("Case #%d: IMPOSSIBLE", i + 1)
 	} else {
 		text = fmt.Sprintf("Case #%d: %d", i + 1, s.gold)
 	}
 	fmt.Println(text)
 }
 
-/*
-func (c *Case) solve (a * Almanac) Solution {
 
+func (c *Case) solve (a * Almanac) Solution {
+	found, gold := a.branchSolve(c.gold, c.id, c.skills)
+	return Solution{found: found, gold: gold}
 }
 
 func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills SkillMask) (found bool, gold int) {
 	almanacCharacter := a.almanacCharacters[id]
 	remainingSkills := missingSkills.and(almanacCharacter.skills.neg())
 	currentBestGold := 200000 // Max in problem is 100000
-	if remainingSkills.isZero() && almanacCharacter.gold < remainingGold {
+	// log.Println(remainingSkills, almanacCharacter, missingSkills)
+	if remainingSkills.isZero() && almanacCharacter.gold <= remainingGold {
 		found = true
 		currentBestGold = almanacCharacter.gold
 	}
 
+	possibleCombinations := remainingSkills.split()
 	for _, comb := range(almanacCharacter.combinations) {
 		c1 := comb.char1
 		c2 := comb.char2
@@ -93,14 +94,30 @@ func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills
 		char2 := a.almanacCharacters[c2]
 		combinedMaxSkills := char1.expandedSkills.or(char2.expandedSkills)
 		// Combination might hold all necessary skills
-		if combinedMaxSkills.neg().and(remainingSkills).isZero() {
-
+		if !combinedMaxSkills.neg().and(remainingSkills).isZero() {
+			// log.Println("Could not reach combination")
+			continue // cannot possibly reach with this combination
 		}
-
+		for _, comb := range (possibleCombinations) {
+			if !char1.expandedSkills.neg().and(comb[0]).isZero() ||
+				!char2.expandedSkills.neg().and(comb[1]).isZero() {
+			// 	log.Println("There was no sub combination")
+				continue // This combination wouldn't work
+			}
+			branch1Found, branch1Gold := a.branchSolve(remainingGold, c1, comb[0])
+			branch2Found, branch2Gold := a.branchSolve(remainingGold - branch1Gold, c2, comb[1])
+			branchFound := branch1Found && branch2Found
+			branchGold := branch1Gold + branch2Gold
+			// log.Println("Branch", branch1Found, branch2Found, branch1Gold, branch2Gold)
+			if branchFound && branchGold < currentBestGold {
+				found = true
+				currentBestGold = branchGold
+			}
+		}
 	}
-
+	return found, currentBestGold
 }
-*/
+
 
 
 func parseAlmanac () Almanac {
@@ -190,6 +207,7 @@ func (a *Almanac) parseCharacter (reader *bufio.Reader) {
 		id: id,
 		skills: skillsMask,
 		expandedSkills: skillsMask,
+		name: name,
 		gold: gold,
 		combinations: []RawCombination{},
 		level: level,
@@ -238,6 +256,7 @@ type ExpandedCharacter struct {
 type AlmanacCharacter struct {
 	id CharacterId
 	skills SkillMask
+	name string
 	expandedSkills SkillMask
 	combinations []RawCombination
 	gold int
@@ -276,7 +295,7 @@ func (sm SkillMask) or (sm1 SkillMask) (sm2 SkillMask) {
 }
 func (sm SkillMask) and (sm1 SkillMask) (sm2 SkillMask) {
 	sm2[0] = sm1[0] & sm[0]
-	sm2[1] = sm[1] & sm[1]
+	sm2[1] = sm1[1] & sm[1]
 	return
 }
 func (sm SkillMask) xor (sm1 SkillMask) (sm2 SkillMask) {
@@ -335,9 +354,4 @@ func handleError (e error) {
 		log.Fatal(e)
 	}
 }
-
-
-
-
-
 
