@@ -88,6 +88,9 @@ func parseCase (reader *bufio.Reader) Case {
 	return Case{
 		tableSize: size,
 		restrictions: restrictions,
+		visitedRestrictions: map[Restriction]bool{},
+		restrictedPeople: map[PersonId]bool{},
+		person2Chain: map[PersonId]ChainId{},
 	}
 }
 
@@ -112,15 +115,19 @@ func (c * Case) solve () Solution {
 			tableSize: c.tableSize,
 		}
 	}*/
+	
+
 	c.joinRestrictions()
 	freePeople := c.getFreePeople()
 	chains := c.getChains()
+	log.Println("Start of loop", freePeople, chains)
 	sittings := [8][]string{}
 	for i, _ := range(sittings) {
 		remainingSits := c.tableSize
 		currentSittings := []string{}
 		for remainingSits > 0 {
 			found, nextChain, newChains := c.getBiggestChain(chains, remainingSits)
+			log.Println("Chain size", remainingSits, found, len(nextChain), len(chains), len(newChains))
 			if !found {
 				break
 			}
@@ -132,6 +139,7 @@ func (c * Case) solve () Solution {
 		}
 		for remainingSits > 0 {
 			var nextPerson PersonId
+			log.Println("free people", freePeople, remainingSits, sittings, chains)
 			nextPerson, freePeople = freePeople[len(freePeople) - 1], freePeople[:len(freePeople) - 1]
 			currentSittings = append(currentSittings, strconv.Itoa(int(nextPerson)))
 			remainingSits--
@@ -148,7 +156,8 @@ func (c * Case) solve () Solution {
 
 func (c * Case) getBiggestChain (chains []Chain, maxPossibleSize int) (found bool, ch Chain, newChains []Chain) {
 	for i, ch := range(chains) {
-		if i < maxPossibleSize {
+		log.Println("Chain size", len(ch), maxPossibleSize)
+		if len(ch) <= maxPossibleSize {
 			return true, ch, append(chains[:i], chains[i + 1: ]...)
 		}
 	}
