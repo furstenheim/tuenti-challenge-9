@@ -19,7 +19,7 @@ func main () {
 	defer conn.Close()
 
 
-	query := "TEST\n"
+	query := "SUBMIT\n"
 	fmt.Fprint(conn, query)
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadString('\n')
@@ -33,6 +33,12 @@ func main () {
 		s.printSolution(conn)
 
 	}
+	for true {
+		line, err := reader.ReadString('\n')
+		log.Println(line)
+		handleError(err)
+	}
+
 }
 
 type ChainId int
@@ -102,21 +108,8 @@ func (s *Solution) printSolution (conn net.Conn) {
 	}
 }
 
-func (c * Case) solve () Solution {
-/*	if len(c.restrictions) == 0 {
-		sittings := [8][]string{}
-		for i, _ := range(sittings) {
-			for j := 0; j < c.tableSize; j++ {
-				sittings[i] = append(sittings[i], strconv.Itoa(8 * i + j + 1))
-			}
-		}
-		return Solution{
-			positions: sittings,
-			tableSize: c.tableSize,
-		}
-	}*/
-	
 
+func (c * Case) solve () Solution {
 	c.joinRestrictions()
 	freePeople := c.getFreePeople()
 	chains := c.getChains()
@@ -207,6 +200,9 @@ func (c * Case) joinRestrictions () {
 		} else if !ok1 && ok2 {
 			c.appendToChain(c2, p2, p1)
 		} else {
+			if c1 == c2 {
+				continue
+			}
 			if c.chains[c1][0] == p1 {
 				c.moveEndChain(c2, c1, p2, p1)
 			} else if c.chains[c2][0] == p2 {
