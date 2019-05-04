@@ -34,9 +34,15 @@ func main () {
 	}
 }
 
+type ChainId int
+type PersonId int
+type Chain []PersonId
 type Case struct {
 	tableSize int
 	restrictions []Restriction
+	chains []Chain
+	person2Chain map[PersonId]ChainId
+	visitedRestrictions map[Restriction]bool
 }
 type Solution struct {
 	positions [8][]string
@@ -44,7 +50,7 @@ type Solution struct {
 }
 
 type Restriction struct {
-	u1, u2 int
+	u1, u2 PersonId
 }
 
 func parseCase (reader *bufio.Reader) Case {
@@ -73,8 +79,8 @@ func parseCase (reader *bufio.Reader) Case {
 		handleError(err)
 		restriction2, err := strconv.Atoi(strings.Fields(restrictionLine)[1])
 		restrictions[i] = Restriction{
-			u1: restriction1,
-			u2: restriction2,
+			u1: PersonId(restriction1),
+			u2: PersonId(restriction2),
 		}
 	}
 	return Case{
@@ -104,9 +110,63 @@ func (c * Case) solve () Solution {
 			tableSize: c.tableSize,
 		}
 	}
+	c.joinRestrictions()
 	log.Fatal("Unknown")
 	return Solution{}
 
+}
+
+func (c * Case) joinRestrictions () {
+	for _, r := range (c.restrictions) {
+		if _, handledRestriction := c.visitedRestrictions[r]; handledRestriction {
+			continue
+		}
+		p1, p2 := r.u1, r.u2
+		c1, ok1 := c.person2Chain[p1]
+		c2, ok2 := c.person2Chain[p2]
+		if !ok1 && !ok2 {
+			nextId := ChainId(len(c.chains))
+			c.chains = append(c.chains, Chain{p1, p2})
+			c.person2Chain[p1] = nextId
+			c.person2Chain[p2] = nextId
+		} else if ok1 && !ok2 {
+			c.appendToChain(c1, p1, p2)
+		} else if !ok1 && ok2 {
+			c.appendToChain(c2, p2, p1)
+		} else {
+			if c.chains[c1][0] == p1 {
+				c.moveEndChain(c2, c1, p2, p1)
+			} else if c.chains[c2][0] == p2 {
+				c.moveEndChain(c1, c2, p1, p2)
+			} else {
+				log.Fatal("Could not move chains", c1, c2, p1, p2)
+			}
+		}
+		c.visitedRestrictions[r] = true
+		c.visitedRestrictions[Restriction{u1: r.u2, u2: r.u1}] = true
+	}
+}
+
+func (c * Case) appendToChain (ch ChainId, attachTo PersonId, attach PersonId) {
+	c.person2Chain[attach] = ch
+	if c.chains[ch][0] == attachTo {
+		c.chains[ch] = append([]PersonId{attach}, c.chains[ch]...)
+	} else if c.chains[ch][len(c.chains[ch]) - 1] == attachTo {
+		c.chains[ch] = append(c.chains[ch], attach)
+	} else {
+		log.Fatal("Id was not correct", c.chains[ch], attachTo)
+	}
+
+}
+
+func (c * Case) moveEndChain (chRemains ChainId, chMoves ChainId, pRemains PersonId, pMoves PersonId) {
+	c.chains[chRemains] = append(c.chains[chRemains], c.chains[chMoves]...)
+	delete(c.person2Chain, pMoves)
+	delete(c.person2Chain, pRemains)
+	// reassign it could be pmove or premains
+	c.person2Chain[c.chains[chRemains][0]] = chRemains
+	c.person2Chain[c.chains[chRemains][len(c.chains[chRemains]) - 1]] = chRemains
+	c.chains[chMoves] = nil
 }
 
 
