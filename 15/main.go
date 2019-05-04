@@ -51,6 +51,7 @@ type Case struct {
 	person2Chain map[PersonId]ChainId
 	visitedRestrictions map[Restriction]bool
 	restrictedPeople map[PersonId]bool
+	partitionCache map[PartitionKey]PartitionEl
 }
 type Solution struct {
 	positions [8][]string
@@ -97,6 +98,7 @@ func parseCase (reader *bufio.Reader) Case {
 		visitedRestrictions: map[Restriction]bool{},
 		restrictedPeople: map[PersonId]bool{},
 		person2Chain: map[PersonId]ChainId{},
+		partitionCache: map[PartitionKey]PartitionEl{},
 	}
 }
 
@@ -113,11 +115,29 @@ func (c * Case) solve () Solution {
 	c.joinRestrictions()
 	freePeople := c.getFreePeople()
 	chains := c.getChains()
+	for _ , p := range(freePeople) {
+		chains = append(chains, Chain{p})
+	}
+	lengths := make([]int, len(chains))
+	for i, c := range(chains) {
+		lengths[i] = len(c)
+	}
+	distribution := c.partitionSum(lengths)
+
+
 	log.Println("Start of loop", freePeople, chains)
 	sittings := [8][]string{}
 	for i, _ := range(sittings) {
-		remainingSits := c.tableSize
 		currentSittings := []string{}
+		for _, index := range (distribution[i]) {
+			for _, person := range(chains[index]) {
+				currentSittings = append(currentSittings, strconv.Itoa(int(person)))
+			}
+		}
+		sittings[i] = currentSittings
+		/*
+
+		remainingSits := c.tableSize
 		for remainingSits > 0 {
 			found, nextChain, newChains := c.getBiggestChain(chains, remainingSits)
 			log.Println("Chain size", remainingSits, found, len(nextChain), len(chains), len(newChains))
@@ -137,7 +157,7 @@ func (c * Case) solve () Solution {
 			currentSittings = append(currentSittings, strconv.Itoa(int(nextPerson)))
 			remainingSits--
 		}
-		sittings[i] = currentSittings
+		*/
 	}
 
 	return Solution{
@@ -146,6 +166,98 @@ func (c * Case) solve () Solution {
 	}
 
 }
+
+type Visits [8 * 24]int
+type PartitionKey struct {
+	remainingSpace int
+	filling [8]int
+	visits Visits
+}
+
+type PartitionEl struct {
+	found bool
+	distribution Visits
+}
+
+func (c * Case) partitionSum (lengths []int ) [8][]int {
+	visits := Visits{}
+	for i, _ :=range(visits) {
+		visits[i] = - 1
+	}
+	el := c.partitionBranch(PartitionKey{
+		remainingSpace: c.tableSize * 8,
+		filling: [8]int{},
+		visits: visits,
+	}, lengths)
+	if !el.found {
+		log.Fatal("Could not distribute")
+	}
+	result := [8][]int{}
+	for i, _ := range(result) {
+		result[i] = []int{}
+	}
+	log.Println(lengths, el.distribution)
+	for i, _ := range(lengths) {
+		table := el.distribution[i]
+		result[table] = append(result[table], i)
+	}
+	return result
+}
+
+func (c * Case) partitionBranch (partitionStatus PartitionKey, lengths []int) PartitionEl {
+	if cache, ok := c.partitionCache[partitionStatus]; ok {
+		return cache
+	}
+
+	// log.Println(partitionStatus, lengths)
+	if partitionStatus.remainingSpace == 0 {
+		return PartitionEl{
+			found: true,
+			distribution: partitionStatus.visits,
+		}
+	}
+	for i, v := range(lengths) {
+		if partitionStatus.visits[i] > -1 {
+			continue // already assigned
+		}
+		for table := 0; table < 8; table ++ {
+			if partitionStatus.filling[table] + v <= c.tableSize {
+				newVisits := cloneVisits(partitionStatus.visits)
+				newVisits[i] = table
+				newFillings := cloneFillings(partitionStatus.filling)
+				newFillings[table] = newFillings[table] + v
+				branchEl := c.partitionBranch(PartitionKey{
+					remainingSpace: partitionStatus.remainingSpace - v,
+					visits: newVisits,
+					filling: newFillings,
+				}, lengths)
+				if branchEl.found {
+					return branchEl
+				}
+
+			}
+		}
+
+	}
+	return PartitionEl{}
+
+}
+func cloneLengths (lengths []int) []int {
+	clone := make([]int, len(lengths))
+	for i, v := range(lengths) {
+		clone[i] = v
+	}
+	return clone
+}
+func cloneVisits(distribution Visits) Visits {
+	distributionCopy := distribution
+	return distributionCopy
+}
+func cloneFillings (fillings [8]int) [8]int {
+	clone := fillings
+	return clone
+}
+
 
 func (c * Case) getBiggestChain (chains []Chain, maxPossibleSize int) (found bool, ch Chain, newChains []Chain) {
 	for i, ch := range(chains) {
