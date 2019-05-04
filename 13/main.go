@@ -80,7 +80,7 @@ func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills
 	almanacCharacter := a.almanacCharacters[id]
 	remainingSkills := missingSkills.and(almanacCharacter.skills.neg())
 	currentBestGold := 200000 // Max in problem is 100000
-	// log.Println(remainingSkills, almanacCharacter, missingSkills, a.skills[2], a.skills[1], a.skills[0])
+	// log.Println(remainingSkills, almanacCharacter, missingSkills, a.skills[68], almanacCharacter.expandedSkills)
 	if remainingSkills.isZero() && almanacCharacter.gold <= remainingGold {
 		found = true
 		currentBestGold = almanacCharacter.gold
@@ -290,7 +290,7 @@ func (sm SkillMask) Combine (sm1, sm2 SkillMask) (combination SkillMask) {
 
 func (sm SkillMask) or (sm1 SkillMask) (sm2 SkillMask) {
 	sm2[0] = sm1[0] | sm[0]
-	sm2[1] = sm[1] | sm[1]
+	sm2[1] = sm1[1] | sm[1]
 	return
 }
 func (sm SkillMask) and (sm1 SkillMask) (sm2 SkillMask) {
@@ -300,7 +300,7 @@ func (sm SkillMask) and (sm1 SkillMask) (sm2 SkillMask) {
 }
 func (sm SkillMask) xor (sm1 SkillMask) (sm2 SkillMask) {
 	sm2[0] = sm1[0] ^ sm[0]
-	sm2[1] = sm[1] ^ sm[1]
+	sm2[1] = sm1[1] ^ sm[1]
 	return
 }
 func (sm SkillMask) neg () (sm2 SkillMask) {
