@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"os"
 	"sort"
-	"golang.org/x/tools/go/ssa"
 	"fmt"
+	"math/bits"
 )
 
 
@@ -24,8 +24,10 @@ func main () {
 	for i := 0; i < numberOfCases; i ++ {
 		log.Println(i)
 		c := parseCase(reader, a)
-		s := c.solve(a)
-		s.printResult(i)
+		_ = a
+		_ = c
+		//s := c.solve(a)
+		//s.printResult(i)
 	}
 }
 
@@ -70,9 +72,35 @@ func (s *Solution) printResult (i int) {
 	fmt.Println(text)
 }
 
+/*
 func (c *Case) solve (a * Almanac) Solution {
 
 }
+
+func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills SkillMask) (found bool, gold int) {
+	almanacCharacter := a.almanacCharacters[id]
+	remainingSkills := missingSkills.and(almanacCharacter.skills.neg())
+	currentBestGold := 200000 // Max in problem is 100000
+	if remainingSkills.isZero() && almanacCharacter.gold < remainingGold {
+		found = true
+		currentBestGold = almanacCharacter.gold
+	}
+
+	for _, comb := range(almanacCharacter.combinations) {
+		c1 := comb.char1
+		c2 := comb.char2
+		char1 := a.almanacCharacters[c1]
+		char2 := a.almanacCharacters[c2]
+		combinedMaxSkills := char1.expandedSkills.or(char2.expandedSkills)
+		// Combination might hold all necessary skills
+		if combinedMaxSkills.neg().and(remainingSkills).isZero() {
+
+		}
+
+	}
+
+}
+*/
 
 
 func parseAlmanac () Almanac {
@@ -238,11 +266,69 @@ func (sm * SkillMask) addSkill (id SkillId) {
 }
 
 func (sm SkillMask) Combine (sm1, sm2 SkillMask) (combination SkillMask) {
-	combination[0] = sm[0] | sm1[0] | sm2[0]
-	combination[1] = sm[1] | sm1[1] | sm2[1]
+	return sm.or(sm1).or(sm2)
+}
+
+func (sm SkillMask) or (sm1 SkillMask) (sm2 SkillMask) {
+	sm2[0] = sm1[0] | sm[0]
+	sm2[1] = sm[1] | sm[1]
+	return
+}
+func (sm SkillMask) and (sm1 SkillMask) (sm2 SkillMask) {
+	sm2[0] = sm1[0] & sm[0]
+	sm2[1] = sm[1] & sm[1]
+	return
+}
+func (sm SkillMask) xor (sm1 SkillMask) (sm2 SkillMask) {
+	sm2[0] = sm1[0] ^ sm[0]
+	sm2[1] = sm[1] ^ sm[1]
+	return
+}
+func (sm SkillMask) neg () (sm2 SkillMask) {
+	sm2[0] = ^ sm[0]
+	sm2[1] = ^ sm[1]
 	return
 }
 
+func (sm SkillMask) isZero() bool {
+	return sm[0] == 0 && sm[1] == 0
+}
+
+func (sm SkillMask) popCount () int {
+	return bits.OnesCount64(sm[0]) + bits.OnesCount64(sm[1])
+}
+
+func (sm SkillMask) split () [][2]SkillMask {
+	p1 := partition64Mask(sm[0])
+	p2 := partition64Mask(sm[1])
+	partitions := [][2]SkillMask{}
+	for _, subp1 := range (p1) {
+		for _, subp2 := range(p2) {
+			partitions = append(
+				partitions, [2]SkillMask{{subp1[1], subp2[1]}, {subp1[0], subp2[0]}})
+		}
+	}
+	return partitions
+}
+
+func partition64Mask (mask uint64) [][2]uint64 {
+	combinations := [][2]uint64{{0, 0}}
+	for true {
+		v := mask & -mask;
+		mask = mask & ^v
+		if v == 0 {
+			break
+		}
+		newCombinations := [][2]uint64{}
+		for _, pair := range(combinations) {
+			newPair1 := [2]uint64{pair[0] | v, pair[1]}
+			newPair2 := [2]uint64{pair[0], pair[1] | v}
+			newCombinations = append(newCombinations, newPair1, newPair2)
+		}
+		combinations = newCombinations
+	}
+	return combinations
+}
 
 func handleError (e error) {
 	if e != nil {
