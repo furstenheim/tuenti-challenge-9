@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"strconv"
 	"strings"
+	"sort"
 )
 
 
@@ -43,6 +44,7 @@ type Case struct {
 	chains []Chain
 	person2Chain map[PersonId]ChainId
 	visitedRestrictions map[Restriction]bool
+	restrictedPeople map[PersonId]bool
 }
 type Solution struct {
 	positions [8][]string
@@ -98,7 +100,7 @@ func (s *Solution) printSolution (conn net.Conn) {
 }
 
 func (c * Case) solve () Solution {
-	if len(c.restrictions) == 0 {
+/*	if len(c.restrictions) == 0 {
 		sittings := [8][]string{}
 		for i, _ := range(sittings) {
 			for j := 0; j < c.tableSize; j++ {
@@ -109,11 +111,71 @@ func (c * Case) solve () Solution {
 			positions: sittings,
 			tableSize: c.tableSize,
 		}
-	}
+	}*/
 	c.joinRestrictions()
-	log.Fatal("Unknown")
-	return Solution{}
+	freePeople := c.getFreePeople()
+	chains := c.getChains()
+	sittings := [8][]string{}
+	for i, _ := range(sittings) {
+		remainingSits := c.tableSize
+		currentSittings := []string{}
+		for remainingSits > 0 {
+			found, nextChain, newChains := c.getBiggestChain(chains, remainingSits)
+			if !found {
+				break
+			}
+			chains = newChains
+			remainingSits -= len(nextChain)
+			for _, p := range (nextChain) {
+				currentSittings = append(currentSittings, strconv.Itoa(int(p)))
+			}
+		}
+		for remainingSits > 0 {
+			var nextPerson PersonId
+			nextPerson, freePeople = freePeople[len(freePeople) - 1], freePeople[:len(freePeople) - 1]
+			currentSittings = append(currentSittings, strconv.Itoa(int(nextPerson)))
+			remainingSits--
+		}
+		sittings[i] = currentSittings
+	}
 
+	return Solution{
+		positions: sittings,
+		tableSize: c.tableSize,
+	}
+
+}
+
+func (c * Case) getBiggestChain (chains []Chain, maxPossibleSize int) (found bool, ch Chain, newChains []Chain) {
+	for i, ch := range(chains) {
+		if i < maxPossibleSize {
+			return true, ch, append(chains[:i], chains[i + 1: ]...)
+		}
+	}
+	return false, Chain{}, chains
+}
+func (c * Case) getFreePeople () []PersonId {
+	freePeople := []PersonId{}
+	for i := 1; i <= c.tableSize * 8; i++ {
+		if _, ok := c.restrictedPeople[PersonId(i)]; ! ok {
+			freePeople = append(freePeople, PersonId(i))
+		}
+	}
+	return freePeople
+}
+
+func (c * Case) getChains () []Chain {
+	chains := []Chain{}
+	for _, c := range (c.chains) {
+		if c != nil {
+			chains = append(chains, c)
+		}
+	}
+	// bigger slices at the beginning
+	sort.Slice(chains, func (i, j int) bool {
+		return len(chains[i]) > len(chains[j])
+	})
+	return chains
 }
 
 func (c * Case) joinRestrictions () {
@@ -122,6 +184,8 @@ func (c * Case) joinRestrictions () {
 			continue
 		}
 		p1, p2 := r.u1, r.u2
+		c.restrictedPeople[p1] = true
+		c.restrictedPeople[p2] = true
 		c1, ok1 := c.person2Chain[p1]
 		c2, ok2 := c.person2Chain[p2]
 		if !ok1 && !ok2 {
