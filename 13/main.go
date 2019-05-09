@@ -113,11 +113,11 @@ func (a * Almanac) branchSolve (remainingGold int, id CharacterId, missingSkills
 				continue // This combination wouldn't work
 			}
 			branch1Found, branch1Gold := a.branchSolve(remainingGold, c1, comb[0])
-			branch2Found, branch2Gold := a.branchSolve(remainingGold - branch1Gold, c2, comb[1])
+			branch2Found, branch2Gold := a.branchSolve(remainingGold, c2, comb[1])
 			branchFound := branch1Found && branch2Found
 			branchGold := branch1Gold + branch2Gold
 			// log.Println("Branch", branch1Found, branch2Found, branch1Gold, branch2Gold)
-			if branchFound && branchGold < currentBestGold {
+			if (!found || (branchFound && branchGold < currentBestGold)) && branchGold <= remainingGold {
 				found = true
 				currentBestGold = branchGold
 			}
