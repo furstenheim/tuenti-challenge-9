@@ -1,0 +1,6 @@
+goodboy to bypass
+different port for resources
+access tree
+use nill ; for user
+with cookie compute hash of auth key
+compute cookie of admin
